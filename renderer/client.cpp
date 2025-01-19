@@ -43,10 +43,9 @@ void ClientSetup() {
             LOG_E("connect: %s, retry %d", strerror(errno), connect_retry + 1);
             printf("connect: %s, retry %d\n", strerror(errno), connect_retry + 1);
             if (connect_retry >= MAX_RETRY_TIMES) {
-                exit(EXIT_FAILURE);
-            } else {
                 LOG_E("connect: %s, failed after %d times", strerror(errno), connect_retry + 1);
                 printf("connect: %s, failed after %d times\n", strerror(errno), connect_retry + 1);
+                exit(EXIT_FAILURE);
             }
             connect_retry++;
             sleep(5);
