@@ -17,8 +17,7 @@ target_link_libraries(termux-display-client
         android
 )
 install(TARGETS termux-display-client LIBRARY)
-#install(DIRECTORY include/ TYPE INCLUDE)
-install(FILES include/* DESTINATION include/termux/display/client)
+install(DIRECTORY include/ DESTINATION include/termux/display/client)
 
 add_executable(termux-display-client-entity renderer/main.cpp)
 target_link_libraries(termux-display-client-entity
