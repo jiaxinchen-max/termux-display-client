@@ -10,7 +10,7 @@ static bool isRunning = false;
 SocketIPCClient *clientRenderer = nullptr;
 static AHardwareBuffer *hwBuffer = nullptr;
 static int dataSocket = -1;
-static int hasConnected = 0;
+static int connect_retry = 0;
 #define MAX_RETRY_TIMES 5
 
 static InputServer *inputServer;
@@ -36,19 +36,19 @@ void ClientSetup() {
     strncpy(serverAddr.sun_path, socketName, sizeof(serverAddr.sun_path) - 1);
 
     // connect
-    while (hasConnected < MAX_RETRY_TIMES) {
+    while (connect_retry < MAX_RETRY_TIMES) {
         int ret = connect(dataSocket, reinterpret_cast<const sockaddr *>(&serverAddr),
                           sizeof(struct sockaddr_un));
         if (ret < 0) {
-            LOG_E("connect: %s, retry %d", strerror(errno), hasConnected + 1);
-            printf("connect: %s, retry %d\n", strerror(errno), hasConnected + 1);
-            if (hasConnected >= MAX_RETRY_TIMES) {
+            LOG_E("connect: %s, retry %d", strerror(errno), connect_retry + 1);
+            printf("connect: %s, retry %d\n", strerror(errno), connect_retry + 1);
+            if (connect_retry >= MAX_RETRY_TIMES) {
                 exit(EXIT_FAILURE);
             } else {
-                LOG_E("connect: %s, failed after %d times", strerror(errno), hasConnected + 1);
-                printf("connect: %s, failed after %d times\n", strerror(errno), hasConnected + 1);
+                LOG_E("connect: %s, failed after %d times", strerror(errno), connect_retry + 1);
+                printf("connect: %s, failed after %d times\n", strerror(errno), connect_retry + 1);
             }
-            hasConnected++;
+            connect_retry++;
             sleep(5);
         }else{
             break;
