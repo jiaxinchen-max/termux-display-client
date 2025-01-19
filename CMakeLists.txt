@@ -24,4 +24,4 @@ target_link_libraries(termux-display-client-entity
         termux-display-client
         log
         android)
-install(TARGETS termux-display-client-entity LIBRARY)
+install(TARGETS termux-display-client-entity BIN)
