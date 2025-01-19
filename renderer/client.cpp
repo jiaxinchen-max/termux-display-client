@@ -10,6 +10,8 @@ static bool isRunning = false;
 SocketIPCClient *clientRenderer = nullptr;
 static AHardwareBuffer *hwBuffer = nullptr;
 static int dataSocket = -1;
+static int hasConnected = 0;
+#define MAX_RETRY_TIMES 5
 
 static InputServer *inputServer;
 
@@ -22,7 +24,7 @@ void ClientSetup() {
     dataSocket = socket(AF_UNIX, SOCK_STREAM, 0);
     if (dataSocket < 0) {
         LOG_E("socket: %s", strerror(errno));
-        printf("socket: %s", strerror(errno));
+        printf("socket: %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -34,21 +36,34 @@ void ClientSetup() {
     strncpy(serverAddr.sun_path, socketName, sizeof(serverAddr.sun_path) - 1);
 
     // connect
-    int ret = connect(dataSocket, reinterpret_cast<const sockaddr *>(&serverAddr),
-                      sizeof(struct sockaddr_un));
-    if (ret < 0) {
-        LOG_E("connect: %s", strerror(errno));
-        printf("connect: %s", strerror(errno));
-        exit(EXIT_FAILURE);
+    while (hasConnected < MAX_RETRY_TIMES) {
+        int ret = connect(dataSocket, reinterpret_cast<const sockaddr *>(&serverAddr),
+                          sizeof(struct sockaddr_un));
+        if (ret < 0) {
+            LOG_E("connect: %s, retry %d", strerror(errno), hasConnected + 1);
+            printf("connect: %s, retry %d\n", strerror(errno), hasConnected + 1);
+            if (hasConnected >= MAX_RETRY_TIMES) {
+                exit(EXIT_FAILURE);
+            } else {
+                LOG_E("connect: %s, failed after %d times", strerror(errno), hasConnected + 1);
+                printf("connect: %s, failed after %d times\n", strerror(errno), hasConnected + 1);
+            }
+            hasConnected++;
+            sleep(5);
+        }else{
+            break;
+        }
+
     }
 
+
     LOG_I("Client ClientSetup complete.");
-    printf("%s","Client ClientSetup complete.");
+    printf("%s\n", "Client ClientSetup complete.");
 }
 
 void DisplayClientInit(uint32_t width, uint32_t height, uint32_t channel) {
     LOG_D("    CLIENT_APP_CMD_INIT_WINDOW");
-    printf("%s","    CLIENT_APP_CMD_INIT_WINDOW");
+    printf("%s\n", "    CLIENT_APP_CMD_INIT_WINDOW");
     sleep(1);
     if (dataSocket < 0) {
         ClientSetup();
@@ -67,6 +82,7 @@ void DisplayClientInit(uint32_t width, uint32_t height, uint32_t channel) {
         int rtCode = AHardwareBuffer_allocate(&hwDesc, &hwBuffer);
         if (rtCode != 0 || !hwBuffer) {
             LOG_E("Failed to allocate hardware buffer.");
+            printf("%s\n", "Failed to allocate hardware buffer.");
             exit(EXIT_FAILURE);
         }
     }
@@ -151,12 +167,14 @@ void DisplayClientStart() {
     close(epoll_fd);
     close(timer_fd);
 }
-void DisplayDraw(const uint8_t* data){
-    if (clientRenderer){
+
+void DisplayDraw(const uint8_t *data) {
+    if (clientRenderer) {
         clientRenderer->Draw(data);
     }
 }
-void InputInit(InputHandler handler){
+
+void InputInit(InputHandler handler) {
     inputServer = new InputServer;
     inputServer->Init();
     inputServer->SetInputHandler(handler);
