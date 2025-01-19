@@ -22,6 +22,7 @@ void ClientSetup() {
     dataSocket = socket(AF_UNIX, SOCK_STREAM, 0);
     if (dataSocket < 0) {
         LOG_E("socket: %s", strerror(errno));
+        printf("socket: %s", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -37,14 +38,17 @@ void ClientSetup() {
                       sizeof(struct sockaddr_un));
     if (ret < 0) {
         LOG_E("connect: %s", strerror(errno));
+        printf("connect: %s", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
     LOG_I("Client ClientSetup complete.");
+    printf("%s","Client ClientSetup complete.");
 }
 
 void DisplayClientInit(uint32_t width, uint32_t height, uint32_t channel) {
     LOG_D("    CLIENT_APP_CMD_INIT_WINDOW");
+    printf("%s","    CLIENT_APP_CMD_INIT_WINDOW");
     sleep(1);
     if (dataSocket < 0) {
         ClientSetup();
