@@ -11,11 +11,28 @@ SocketIPCClient *clientRenderer = nullptr;
 static AHardwareBuffer *hwBuffer = nullptr;
 static int dataSocket = -1;
 static int connect_retry = 0;
-#define MAX_RETRY_TIMES 5
+#define MAX_RETRY_TIMES 12
 
+#define SIGTERM_MSG "KILL | SIGTERM received.\n"
+#define SOCKET_NAME     "shard_texture_socket"
 static InputServer *inputServer;
 
-#define SOCKET_NAME     "shard_texture_socket"
+void SigTermHandler(int signum, siginfo_t *info, void *ptr) {
+    write(STDERR_FILENO, SIGTERM_MSG, sizeof(SIGTERM_MSG));
+    InputEvent ev = {.type=EVENT_CLIENT_EXIT};
+    send(inputServer->GetDataSocket(), &ev, sizeof(ev), MSG_DONTWAIT);
+}
+
+void CatchSigterm() {
+    static struct sigaction sigact;
+
+    memset(&sigact, 0, sizeof(sigact));
+    sigact.sa_sigaction = SigTermHandler;
+    sigact.sa_flags = SA_SIGINFO;
+
+    sigaction(SIGTERM, &sigact, NULL);
+    sigaction(SIGINT, &sigact, NULL);
+}
 
 void ClientSetup() {
     char socketName[108];
@@ -49,13 +66,11 @@ void ClientSetup() {
             }
             connect_retry++;
             sleep(5);
-        }else{
+        } else {
             break;
         }
-
     }
-
-
+    CatchSigterm();
     LOG_I("Client ClientSetup complete.");
     printf("%s\n", "Client ClientSetup complete.");
 }
