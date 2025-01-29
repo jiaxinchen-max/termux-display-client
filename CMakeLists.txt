@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10.1)
-
+project(termux-display-client)
 include_directories(inc)
 include_directories(include)
 add_library(termux-display-client
