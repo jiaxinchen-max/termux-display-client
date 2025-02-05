@@ -14,7 +14,7 @@ static  int timer_fd =-1;
 static int epoll_fd =-1;
 #define MAX_RETRY_TIMES 12
 
-#define SIGTERM_MSG "KILL | SIGTERM received.\n"
+#define SIGTERM_MSG "\nKILL | SIGTERM received.\n"
 #define SOCKET_NAME     "shard_texture_socket"
 static InputServer *inputServer;
 
@@ -191,6 +191,17 @@ void DisplayClientStart() {
 void DisplayDraw(const uint8_t *data) {
     if (clientRenderer) {
         clientRenderer->Draw(data);
+    }
+}
+void BeginDisplayDraw(const uint8_t *data){
+    if (clientRenderer) {
+        clientRenderer->BeginDraw(data);
+    }
+}
+
+void EndDisplayDraw(){
+    if (clientRenderer) {
+        clientRenderer->EndDraw();
     }
 }
 

@@ -11,6 +11,8 @@ public:
     void Init(AHardwareBuffer *hwBuffer, int dataSocket);
     void SetImageGeometry(uint32_t w,uint32_t h,uint32_t ch);
     void Draw(const uint8_t* data);
+    void BeginDraw(const uint8_t* data);
+    void EndDraw();
 
     void Destroy();
 
