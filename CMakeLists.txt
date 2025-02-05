@@ -18,7 +18,7 @@ target_link_libraries(termux-display-client
 install(TARGETS termux-display-client LIBRARY)
 install(DIRECTORY include/ DESTINATION include/termux/display/client)
 
-add_executable(termux-display-client-entity renderer/main.cpp)
+add_executable(termux-display-client-entity renderer/main.c)
 target_link_libraries(termux-display-client-entity
         termux-display-client
         log
