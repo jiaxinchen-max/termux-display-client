@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include "InputEvent.h"
 #include "types.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -16,9 +17,16 @@ void DisplayDraw(const uint8_t *data);
 
 void BeginDisplayDraw(const uint8_t *data);
 
+void DisplayDestroy();
+
 void EndDisplayDraw();
 
 void InputInit(InputHandler handler);
+
+void InputDestroy();
+
+int GetInputSocket();
+
 
 #ifdef __cplusplus
 }

@@ -10,8 +10,8 @@ SocketIPCClient *clientRenderer = nullptr;
 static AHardwareBuffer *hwBuffer = nullptr;
 static int dataSocket = -1;
 static int connect_retry = 0;
-static  int timer_fd =-1;
-static int epoll_fd =-1;
+static int timer_fd = -1;
+static int epoll_fd = -1;
 #define MAX_RETRY_TIMES 12
 
 #define SIGTERM_MSG "\nKILL | SIGTERM received.\n"
@@ -20,15 +20,7 @@ static InputServer *inputServer;
 
 void SigTermHandler(int signum, siginfo_t *info, void *ptr) {
     write(STDERR_FILENO, SIGTERM_MSG, sizeof(SIGTERM_MSG));
-    InputEvent ev = {.type=EVENT_CLIENT_EXIT};
-    send(inputServer->GetDataSocket(), &ev, sizeof(ev), MSG_DONTWAIT);
-    isRunning = false;
-    close(epoll_fd);
-    close(timer_fd);
-    inputServer->Destroy();
-    clientRenderer->Destroy();
-    AHardwareBuffer_release(hwBuffer);
-    close(dataSocket);
+    DisplayDestroy();
 }
 
 void CatchSigterm() {
@@ -109,8 +101,8 @@ void DisplayClientInit(uint32_t width, uint32_t height, uint32_t channel) {
 }
 
 void DisplayClientStart() {
-    printf("%s\n","----------------------------------------------------------------");
-    printf("%s\n","    DisplayClientStart()");
+    printf("%s\n", "----------------------------------------------------------------");
+    printf("%s\n", "    DisplayClientStart()");
     isRunning = true;
 
     timer_fd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
@@ -193,16 +185,29 @@ void DisplayDraw(const uint8_t *data) {
         clientRenderer->Draw(data);
     }
 }
-void BeginDisplayDraw(const uint8_t *data){
+
+void BeginDisplayDraw(const uint8_t *data) {
     if (clientRenderer) {
         clientRenderer->BeginDraw(data);
     }
 }
 
-void EndDisplayDraw(){
+void EndDisplayDraw() {
     if (clientRenderer) {
         clientRenderer->EndDraw();
     }
+}
+
+void DisplayDestroy() {
+    InputEvent ev = {.type=EVENT_CLIENT_EXIT};
+    send(inputServer->GetDataSocket(), &ev, sizeof(ev), MSG_DONTWAIT);
+    isRunning = false;
+    close(epoll_fd);
+    close(timer_fd);
+    inputServer->Destroy();
+    clientRenderer->Destroy();
+    AHardwareBuffer_release(hwBuffer);
+    close(dataSocket);
 }
 
 void InputInit(InputHandler handler) {
@@ -210,3 +215,17 @@ void InputInit(InputHandler handler) {
     inputServer->Init();
     inputServer->SetInputHandler(handler);
 };
+
+void InputDestroy() {
+    if (inputServer) {
+        inputServer->Destroy();
+    }
+}
+
+int GetInputSocket() {
+    if (inputServer) {
+        return inputServer->GetDataSocket();
+    }
+    return -1;
+}
+
