@@ -16,18 +16,25 @@ typedef enum {
     EVENT_CLIPBOARD_REQUEST,
     EVENT_CLIPBOARD_SEND,
     EVENT_CLIENT_EXIT,
+    EVENT_FRAME_COMPLETE,
+    EVENT_TOUCH_DOWN,
+    EVENT_TOUCH_UP,
+    EVENT_TOUCH_POINTER_UP,
 } eventType;
 #endif
+typedef struct touch_event {
+    uint8_t num_pointers;
+    uint8_t t;
+    uint16_t type, id, x, y;
+};
 typedef union {
     uint8_t type;
     struct {
         uint8_t t;
         uint16_t width, height, framerate;
     } screenSize;
-    struct {
-        uint8_t t;
-        uint16_t type, id, x, y;
-    } touch;
+    struct touch_event touch;
+    struct touch_event touch_events[4];
     struct {
         uint8_t t;
         float x, y;
@@ -37,6 +44,7 @@ typedef union {
         uint8_t t;
         uint16_t key;
         uint8_t state;
+        uint8_t mod;
     } key;
     struct {
         uint8_t t;
@@ -62,4 +70,29 @@ typedef union {
         uint32_t count;
     } clipboardSend;
 } InputEvent;
+typedef enum {
+    /// No modifier pressed.
+    TDC_MOD_NONE = 0,
+    /// Left shift pressed.
+    TDC_MOD_LSHIFT = 1,
+    /// Right shift pressed.
+    TDC_MOD_RSHIFT = 2,
+    /// Left ctrl pressed.
+    TDC_MOD_LCTRL = 4,
+    /// Right ctrl pressed.
+    TDC_MOD_RCTRL = 8,
+    /// Alt pressed.
+    TDC_MOD_ALT = 16,
+    /// Fn pressed.
+    TDC_MOD_FN = 32,
+    /// Caps lock pressed.
+    TDC_MOD_CAPS_LOCK = 64,
+    /// Alt gr pressed.
+    TDC_MOD_ALT_GR = 128,
+    /// Num lock pressed.
+    TDC_MOD_NUM_LOCK = 256,
+
+    /// Maximum modifier value, for future binary compatibility.
+    TDC_MOD_MAX = 1 << 31,
+} tgui_key_modifier;
 #endif
