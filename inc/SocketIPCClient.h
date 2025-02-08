@@ -8,15 +8,15 @@ class SocketIPCClient {
 public:
     static SocketIPCClient *GetInstance();
 
-    void Init(AHardwareBuffer *hwBuffer, int dataSocket);
+    int Init(AHardwareBuffer *hwBuffer, int dataSocket);
     void SetImageGeometry(uint32_t w,uint32_t h,uint32_t ch);
-    void Draw(const uint8_t* data);
-    void BeginDraw(const uint8_t* data);
-    void EndDraw();
+    int Draw(const uint8_t* data);
+    int BeginDraw(const uint8_t* data);
+    int EndDraw();
 
     void Destroy();
 
-    void Draw();
+    int Draw();
 
 private:
     SocketIPCClient() = default;

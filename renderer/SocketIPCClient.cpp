@@ -6,12 +6,12 @@
 
 #include "stb_image/stb_image.h"
 
-void SocketIPCClient::Init(AHardwareBuffer *hwBuffer, int dataSocket) {
+int SocketIPCClient::Init(AHardwareBuffer *hwBuffer, int dataSocket) {
     buffer = hwBuffer;
-    AHardwareBuffer_sendHandleToUnixSocket(hwBuffer, dataSocket);
+    return AHardwareBuffer_sendHandleToUnixSocket(hwBuffer, dataSocket);
 }
 
-void SocketIPCClient::Draw() {
+int SocketIPCClient::Draw() {
     int ret;
     void *shared_buffer;
     ret = AHardwareBuffer_lock(buffer,
@@ -21,6 +21,7 @@ void SocketIPCClient::Draw() {
                                &shared_buffer);
     if (ret != 0) {
         printf("%s\n", "Failed to AHardwareBuffer_lock");
+        return ret;
     }
 
     //Produces a gradient pattern, uses shift to set as red, blue, or green
@@ -54,9 +55,7 @@ void SocketIPCClient::Draw() {
     memcpy(shared_buffer, chs, width * height * sizeof(uint32_t));
     ret = AHardwareBuffer_unlock(buffer, NULL);
     stbi_image_free(chs);
-    if (ret != 0) {
-        printf("%s\n", "Failed to AHardwareBuffer_unlock");
-    }
+    return ret;
 }
 
 SocketIPCClient SocketIPCClient::s_Renderer{};
@@ -75,11 +74,11 @@ void SocketIPCClient::SetImageGeometry(uint32_t w, uint32_t h, uint32_t ch) {
     m_ImgChannel = ch;
 }
 
-void SocketIPCClient::Draw(const uint8_t *data) {
+int SocketIPCClient::Draw(const uint8_t *data) {
     if (m_ImgWidth < 1 ||
         m_ImgHeight < 1) {
         printf("%s\n", "Display Geometry Size Not Set");
-        return;
+        return -1;
     }
     int ret;
     void *shared_buffer;
@@ -97,13 +96,14 @@ void SocketIPCClient::Draw(const uint8_t *data) {
     if (ret != 0) {
         printf("%s\n", "Failed to AHardwareBuffer_unlock");
     }
+    return ret;
 }
 
-void SocketIPCClient::BeginDraw(const uint8_t *data) {
+int SocketIPCClient::BeginDraw(const uint8_t *data) {
     if (m_ImgWidth < 1 ||
         m_ImgHeight < 1) {
         printf("%s\n", "Display Geometry Size Not Set");
-        return;
+        return -1;
     }
     int ret;
     void *shared_buffer;
@@ -115,13 +115,14 @@ void SocketIPCClient::BeginDraw(const uint8_t *data) {
     if (ret != 0) {
         printf("%s\n", "Failed to AHardwareBuffer_lock");
     }
-
     memcpy(shared_buffer, data, m_ImgWidth * m_ImgWidth * sizeof(uint32_t));
+    return ret;
 }
 
-void SocketIPCClient::EndDraw() {
+int SocketIPCClient::EndDraw() {
     int ret = AHardwareBuffer_unlock(buffer, NULL);
     if (ret != 0) {
         printf("%s\n", "Failed to AHardwareBuffer_unlock");
     }
+    return ret;
 }

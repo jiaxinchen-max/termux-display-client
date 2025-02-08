@@ -71,7 +71,7 @@ void ClientSetup() {
     printf("%s\n", "Client ClientSetup complete.");
 }
 
-void DisplayClientInit(uint32_t width, uint32_t height, uint32_t channel) {
+int DisplayClientInit(uint32_t width, uint32_t height, uint32_t channel) {
     printf("%s\n", "    CLIENT_APP_CMD_INIT");
     sleep(1);
     if (dataSocket < 0) {
@@ -96,11 +96,14 @@ void DisplayClientInit(uint32_t width, uint32_t height, uint32_t channel) {
     }
 
     clientRenderer = SocketIPCClient::GetInstance();
-    clientRenderer->Init(hwBuffer, dataSocket);
-    clientRenderer->SetImageGeometry(width, height, channel);
+    int ret = clientRenderer->Init(hwBuffer, dataSocket);
+    if (ret==0){
+        clientRenderer->SetImageGeometry(width, height, channel);
+    }
+    return ret;
 }
 
-void DisplayClientStart() {
+int DisplayClientStart() {
     printf("%s\n", "----------------------------------------------------------------");
     printf("%s\n", "    DisplayClientStart()");
     isRunning = true;
@@ -168,7 +171,7 @@ void DisplayClientStart() {
                     close(epoll_fd);
                     close(timer_fd);
                     AHardwareBuffer_release(hwBuffer);
-                    return;
+                    return 0;
                 }
                 if (clientRenderer) {
                     clientRenderer->Draw();
@@ -178,24 +181,28 @@ void DisplayClientStart() {
     }
     close(epoll_fd);
     close(timer_fd);
+    return  0;
 }
 
-void DisplayDraw(const uint8_t *data) {
+int DisplayDraw(const uint8_t *data) {
     if (clientRenderer) {
-        clientRenderer->Draw(data);
+        return clientRenderer->Draw(data);
     }
+    return -1;
 }
 
-void BeginDisplayDraw(const uint8_t *data) {
+int BeginDisplayDraw(const uint8_t *data) {
     if (clientRenderer) {
-        clientRenderer->BeginDraw(data);
+        return clientRenderer->BeginDraw(data);
     }
+    return -1;
 }
 
-void EndDisplayDraw() {
+int EndDisplayDraw() {
     if (clientRenderer) {
-        clientRenderer->EndDraw();
+        return clientRenderer->EndDraw();
     }
+    return -1;
 }
 
 void DisplayDestroy() {

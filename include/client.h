@@ -9,17 +9,17 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-void DisplayClientInit(uint32_t width, uint32_t height, uint32_t channel);
+int DisplayClientInit(uint32_t width, uint32_t height, uint32_t channel);
 
-void DisplayClientStart();
+int DisplayClientStart();
 
-void DisplayDraw(const uint8_t *data);
+int DisplayDraw(const uint8_t *data);
 
-void BeginDisplayDraw(const uint8_t *data);
+int BeginDisplayDraw(const uint8_t *data);
 
 void DisplayDestroy();
 
-void EndDisplayDraw();
+int EndDisplayDraw();
 
 void InputInit(InputHandler handler);
 
