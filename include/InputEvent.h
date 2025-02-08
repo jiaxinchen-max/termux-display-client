@@ -19,6 +19,7 @@ typedef enum {
     EVENT_FRAME_COMPLETE,
     EVENT_TOUCH_DOWN,
     EVENT_TOUCH_UP,
+    EVENT_TOUCH_MOVE,
     EVENT_TOUCH_POINTER_UP,
 } eventType;
 #endif
