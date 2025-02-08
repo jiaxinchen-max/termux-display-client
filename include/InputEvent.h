@@ -95,5 +95,5 @@ typedef enum {
 
     /// Maximum modifier value, for future binary compatibility.
     TDC_MOD_MAX = 1 << 31,
-} tdc_key_modifier;
+} termuxdc_key_modifier;
 #endif
