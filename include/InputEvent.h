@@ -21,7 +21,7 @@ typedef enum {
     EVENT_TOUCH_UP,
     EVENT_TOUCH_MOVE,
     EVENT_TOUCH_POINTER_UP,
-} eventType;
+} event_type;
 #endif
 typedef struct {
     uint8_t num_pointers;
@@ -70,7 +70,7 @@ typedef union {
         uint8_t t;
         uint32_t count;
     } clipboardSend;
-} InputEvent;
+} termuxdc_event;
 typedef enum {
     /// No modifier pressed.
     TDC_MOD_NONE = 0,

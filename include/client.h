@@ -27,6 +27,7 @@ void InputDestroy();
 
 int GetInputSocket();
 
+int WaitEvent(termuxdc_event *event);
 
 #ifdef __cplusplus
 }

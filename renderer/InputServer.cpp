@@ -83,11 +83,20 @@ void InputServer::setRunning(bool run) {
     running = run;
 }
 
+int InputServer::waitEvent(termuxdc_event *event) {
+    if (dataSocket > 0) {
+        recv(dataSocket, event, sizeof(*event), MSG_WAITALL);
+    } else {
+        return -1;
+    }
+    return 0;
+}
+
 void *work(void *args) {
     auto *server = static_cast<InputServer *>(args);
     server->setRunning(true);
     while (server->isRunning()) {
-        InputEvent buf;
+        termuxdc_event buf;
         recv(server->GetDataSocket(), &buf, sizeof(buf), MSG_WAITALL);
         if (server->GetInputHandler()) {
             server->GetInputHandler()(buf);

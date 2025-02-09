@@ -97,7 +97,7 @@ int DisplayClientInit(uint32_t width, uint32_t height, uint32_t channel) {
 
     clientRenderer = SocketIPCClient::GetInstance();
     int ret = clientRenderer->Init(hwBuffer, dataSocket);
-    if (ret==0){
+    if (ret == 0) {
         clientRenderer->SetImageGeometry(width, height, channel);
     }
     return ret;
@@ -181,7 +181,7 @@ int DisplayClientStart() {
     }
     close(epoll_fd);
     close(timer_fd);
-    return  0;
+    return 0;
 }
 
 int DisplayDraw(const uint8_t *data) {
@@ -206,7 +206,7 @@ int EndDisplayDraw() {
 }
 
 void DisplayDestroy() {
-    InputEvent ev = {.type=EVENT_CLIENT_EXIT};
+    termuxdc_event ev = {.type=EVENT_CLIENT_EXIT};
     send(inputServer->GetDataSocket(), &ev, sizeof(ev), MSG_DONTWAIT);
     isRunning = false;
     close(epoll_fd);
@@ -236,3 +236,9 @@ int GetInputSocket() {
     return -1;
 }
 
+int WaitEvent(termuxdc_event *event) {
+    if (inputServer) {
+        return inputServer->waitEvent(event);
+    }
+    return -1;
+}

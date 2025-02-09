@@ -3,5 +3,5 @@
 #include "InputEvent.h"
 class InputEventCallback{
 public:
-    virtual void callback(InputEvent ev);
+    virtual void callback(termuxdc_event ev);
 };

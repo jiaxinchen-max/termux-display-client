@@ -25,6 +25,8 @@ public:
     bool isRunning();
     void setRunning(bool run);
 
+    int waitEvent(termuxdc_event *event);
+
 private:
     int dataSocket;
 

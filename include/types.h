@@ -1,6 +1,6 @@
 #pragma once
 #include "InputEvent.h"
-typedef void (*InputHandler)(InputEvent);
+typedef void (*InputHandler)(termuxdc_event);
 
 /**
  * @brief Status codes for all functions in the library.
