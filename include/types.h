@@ -1,4 +1,6 @@
 #pragma once
+
+#include <android/hardware_buffer.h>
 #include "termuxdc_event.h"
 typedef void (*InputHandler)(termuxdc_event);
 
@@ -26,3 +28,31 @@ typedef enum {
     /// The Android API level is too low for the function.
     TERMUX_DC_ERR_API_LEVEL = 8,
 } termuxdc_state;
+
+typedef struct native_handle {
+    int version; /* sizeof(native_handle_t) */
+    int numFds;  /* number of file-descriptors at &data[0] */
+    int numInts; /* number of ints at &data[numFds] */
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wzero-length-array"
+#endif
+    int data[0]; /* numFds + numInts ints */
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
+} native_handle_t;
+struct termuxdc_buffer {
+    uint32_t format;
+    AHardwareBuffer_Desc desc;
+    AHardwareBuffer* buffer;
+    void *dlhandle;
+    int (*lock)(AHardwareBuffer *buffer,
+                uint64_t usage,
+                int32_t fence,
+                const ARect *rect,
+                void **outVirtualAddress);
+    int (*unlock)(AHardwareBuffer *buffer, int32_t *fence);
+    void (*describe)(const AHardwareBuffer *buffer, AHardwareBuffer_Desc *outDesc);
+    const native_handle_t *(*getNativeHandle)(const AHardwareBuffer *buffer);
+};

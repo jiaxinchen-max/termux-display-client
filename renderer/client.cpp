@@ -1,5 +1,6 @@
 #include <sys/timerfd.h>
 #include <sys/epoll.h>
+#include <dlfcn.h>
 #include "client.h"
 #include "SocketIPCClient.h"
 #include "termuxdc_server.h"
@@ -17,10 +18,55 @@ static int epoll_fd = -1;
 #define SIGTERM_MSG "\nKILL | SIGTERM received.\n"
 #define SOCKET_NAME     "shard_texture_socket"
 static termuxdc_server *inputServer;
+static termuxdc_buffer *termuxBuffer;
+
+bool termuxdc_buffer_ahb_func_load(struct termuxdc_buffer *buffer) {
+    buffer->dlhandle = dlopen("libandroid.so", RTLD_NOW);
+    if (!buffer->dlhandle) {
+        printf("failed to load libandroid.so %s\n", dlerror());
+        return false;
+    }
+
+    if ((buffer->lock = (int (*)(AHardwareBuffer *, uint64_t, int32_t, const ARect *,
+                                 void **)) dlsym(buffer->dlhandle, "AHardwareBuffer_lock")) ==
+        NULL) {
+        printf("load symbol AHardwareBuffer_lock failed %s\n", dlerror());
+        dlclose(buffer->dlhandle);
+        return false;
+    }
+    if ((buffer->unlock = (int (*)(AHardwareBuffer *, int32_t *)) dlsym(buffer->dlhandle,
+                                                                        "AHardwareBuffer_unlock")) ==
+        NULL) {
+        printf("load symbol AHardwareBuffer_unlock failed %s\n", dlerror());
+        dlclose(buffer->dlhandle);
+        return false;
+    }
+    if ((buffer->describe = (void (*)(const AHardwareBuffer *, AHardwareBuffer_Desc *)) dlsym(
+            buffer->dlhandle, "AHardwareBuffer_describe")) == NULL) {
+        printf("load symbol AHardwareBuffer_describe failed %s\n", dlerror());
+        dlclose(buffer->dlhandle);
+        return false;
+    }
+    if ((buffer->getNativeHandle = (const native_handle_t *(*)(const AHardwareBuffer *)) dlsym(
+            buffer->dlhandle, "AHardwareBuffer_describe")) == NULL) {
+        printf("load symbol AHardwareBuffer_describe failed %s\n", dlerror());
+        dlclose(buffer->dlhandle);
+        return false;
+    }
+
+    return true;
+}
+
+bool termuxdc_buffer_ahb_fun_unload(struct termuxdc_buffer *buffer) {
+    int ret = dlclose(buffer->dlhandle);
+    return ret == NULL;
+}
 
 void sig_term_handler(int signum, siginfo_t *info, void *ptr) {
     write(STDERR_FILENO, SIGTERM_MSG, sizeof(SIGTERM_MSG));
     display_destroy();
+    termuxdc_buffer_ahb_fun_unload(termuxBuffer);
+    delete termuxBuffer;
 }
 
 void catch_sig_term() {
@@ -68,6 +114,8 @@ void client_setup() {
         }
     }
     catch_sig_term();
+    termuxBuffer = new termuxdc_buffer;
+    termuxdc_buffer_ahb_func_load(termuxBuffer);
     printf("%s\n", "Client client_setup complete.");
 }
 
@@ -242,3 +290,11 @@ int event_wait(termuxdc_event *event) {
     }
     return -1;
 }
+
+const native_handle_t *get_native_handler() {
+    if (termuxBuffer){
+        return termuxBuffer->getNativeHandle(hwBuffer);
+    }
+}
+
+
