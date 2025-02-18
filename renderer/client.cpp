@@ -59,7 +59,7 @@ bool termuxdc_buffer_ahb_func_load(struct termuxdc_buffer *buffer) {
 
 bool termuxdc_buffer_ahb_fun_unload(struct termuxdc_buffer *buffer) {
     int ret = dlclose(buffer->dlhandle);
-    return ret == NULL;
+    return ret == 0;
 }
 
 void sig_term_handler(int signum, siginfo_t *info, void *ptr) {
