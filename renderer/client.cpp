@@ -141,6 +141,8 @@ int display_client_init(uint32_t width, uint32_t height, uint32_t channel) {
             printf("%s\n", "Failed to allocate hardware buffer.");
             exit(EXIT_FAILURE);
         }
+        termuxBuffer->buffer = hwBuffer;
+        termuxBuffer->desc = hwDesc;
     }
 
     clientRenderer = SocketIPCClient::GetInstance();
@@ -292,9 +294,11 @@ int event_wait(termuxdc_event *event) {
 }
 
 const native_handle_t *get_native_handler() {
-    if (termuxBuffer){
-        return termuxBuffer->getNativeHandle(hwBuffer);
+    if (termuxBuffer &&
+        termuxBuffer->buffer) {
+        return termuxBuffer->getNativeHandle(termuxBuffer->buffer);
     }
+    return nullptr;
 }
 
 
