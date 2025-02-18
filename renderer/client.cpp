@@ -293,6 +293,10 @@ int event_wait(termuxdc_event *event) {
     return -1;
 }
 
+termuxdc_buffer *get_termuxdc_buffer() {
+    return termuxBuffer;
+}
+
 const native_handle_t *get_native_handler() {
     if (termuxBuffer &&
         termuxBuffer->buffer) {

@@ -29,6 +29,8 @@ int get_input_socket();
 
 int event_wait(termuxdc_event *event);
 
+struct termuxdc_buffer *get_termuxdc_buffer();
+
 const native_handle_t *get_native_handler();
 
 #ifdef __cplusplus
