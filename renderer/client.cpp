@@ -54,9 +54,12 @@ bool termuxdc_buffer_ahb_func_load(struct termuxdc_buffer *buffer) {
         dlclose(buffer->dlhandle);
         return false;
     }
+    printf("load symbols succeed %s\n", "ok");
 
     buffer->begin_draw = begin_display_draw;
     buffer->end_draw = end_display_draw;
+
+    printf("load function symbol  succeed %s\n", "ok");
 
     return true;
 }
