@@ -29,7 +29,7 @@ typedef enum {
     TERMUX_DC_ERR_API_LEVEL = 8,
 } termuxdc_state;
 
-typedef struct native_handle {
+typedef struct {
     int version; /* sizeof(termuxdc_native_handle_t) */
     int numFds;  /* number of file-descriptors at &data[0] */
     int numInts; /* number of ints at &data[numFds] */
