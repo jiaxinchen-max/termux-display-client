@@ -30,7 +30,7 @@ typedef enum {
 } termuxdc_state;
 
 typedef struct native_handle {
-    int version; /* sizeof(native_handle_t) */
+    int version; /* sizeof(termuxdc_native_handle_t) */
     int numFds;  /* number of file-descriptors at &data[0] */
     int numInts; /* number of ints at &data[numFds] */
 #if defined(__clang__)
@@ -41,7 +41,7 @@ typedef struct native_handle {
 #if defined(__clang__)
 #pragma clang diagnostic pop
 #endif
-} native_handle_t;
+} termuxdc_native_handle_t;
 struct termuxdc_buffer {
     uint32_t format;
     AHardwareBuffer_Desc desc;
@@ -54,7 +54,7 @@ struct termuxdc_buffer {
                 void **outVirtualAddress);
     int (*unlock)(AHardwareBuffer *buffer, int32_t *fence);
     void (*describe)(const AHardwareBuffer *buffer, AHardwareBuffer_Desc *outDesc);
-    const native_handle_t *(*getNativeHandle)(const AHardwareBuffer *buffer);
+    const termuxdc_native_handle_t *(*getNativeHandle)(const AHardwareBuffer *buffer);
     int (*begin_draw)(void **outVirtualAddress);
     int (*end_draw)();
 };

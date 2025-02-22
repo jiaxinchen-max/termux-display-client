@@ -47,7 +47,7 @@ bool termuxdc_buffer_ahb_func_load(struct termuxdc_buffer *buffer) {
         dlclose(buffer->dlhandle);
         return false;
     }
-    if ((buffer->getNativeHandle = (const native_handle_t *(*)(const AHardwareBuffer *)) dlsym(
+    if ((buffer->getNativeHandle = (const termuxdc_native_handle_t *(*)(const AHardwareBuffer *)) dlsym(
             buffer->dlhandle, "AHardwareBuffer_describe")) == NULL) {
         printf("load symbol AHardwareBuffer_describe failed %s\n", dlerror());
         dlclose(buffer->dlhandle);
@@ -300,7 +300,7 @@ termuxdc_buffer *get_termuxdc_buffer() {
     return termuxBuffer;
 }
 
-const native_handle_t *get_native_handler() {
+const termuxdc_native_handle_t *get_native_handler() {
     if (termuxBuffer &&
         termuxBuffer->buffer) {
         return termuxBuffer->getNativeHandle(termuxBuffer->buffer);

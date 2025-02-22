@@ -31,7 +31,7 @@ int event_wait(termuxdc_event *event);
 
 struct termuxdc_buffer *get_termuxdc_buffer();
 
-const native_handle_t *get_native_handler();
+const termuxdc_native_handle_t *get_native_handler();
 
 #ifdef __cplusplus
 }
