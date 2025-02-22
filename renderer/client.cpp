@@ -117,8 +117,6 @@ void client_setup() {
         }
     }
     catch_sig_term();
-    termuxBuffer = new termuxdc_buffer;
-    termuxdc_buffer_ahb_func_load(termuxBuffer);
     printf("%s\n", "Client client_setup complete.");
 }
 
@@ -153,6 +151,10 @@ int display_client_init(uint32_t width, uint32_t height, uint32_t channel) {
     if (ret == 0) {
         clientRenderer->SetImageGeometry(width, height, channel);
     }
+
+    termuxBuffer = new termuxdc_buffer;
+    termuxdc_buffer_ahb_func_load(termuxBuffer);
+
     return ret;
 }
 
