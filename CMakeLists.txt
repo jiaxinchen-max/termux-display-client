@@ -22,5 +22,6 @@ add_executable(termux-display-client-entity renderer/main.c)
 target_link_libraries(termux-display-client-entity
         termux-display-client
         log
+        dl
         android)
 install(TARGETS termux-display-client-entity RUNTIME)
