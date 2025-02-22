@@ -47,15 +47,16 @@ bool termuxdc_buffer_ahb_func_load(struct termuxdc_buffer *buffer) {
         dlclose(buffer->dlhandle);
         return false;
     }
-    if ((buffer->getNativeHandle = (const termuxdc_native_handle_t *(*)(const AHardwareBuffer *)) dlsym(
+    if ((buffer->getNativeHandle = (const termuxdc_native_handle_t *(*)(
+            const AHardwareBuffer *)) dlsym(
             buffer->dlhandle, "AHardwareBuffer_describe")) == NULL) {
         printf("load symbol AHardwareBuffer_describe failed %s\n", dlerror());
         dlclose(buffer->dlhandle);
         return false;
     }
 
-    buffer->begin_draw=begin_display_draw;
-    buffer->end_draw=end_display_draw;
+    buffer->begin_draw = begin_display_draw;
+    buffer->end_draw = end_display_draw;
 
     return true;
 }
@@ -69,7 +70,7 @@ void sig_term_handler(int signum, siginfo_t *info, void *ptr) {
     write(STDERR_FILENO, SIGTERM_MSG, sizeof(SIGTERM_MSG));
     display_destroy();
     termuxdc_buffer_ahb_fun_unload(termuxBuffer);
-    delete termuxBuffer;
+    free(termuxBuffer);
 }
 
 void catch_sig_term() {
@@ -152,7 +153,7 @@ int display_client_init(uint32_t width, uint32_t height, uint32_t channel) {
         clientRenderer->SetImageGeometry(width, height, channel);
     }
 
-    termuxBuffer = new termuxdc_buffer;
+    termuxBuffer = static_cast<termuxdc_buffer *>(malloc(sizeof(termuxdc_buffer)));
     termuxdc_buffer_ahb_func_load(termuxBuffer);
 
     return ret;
