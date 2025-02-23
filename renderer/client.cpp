@@ -315,8 +315,15 @@ termuxdc_buffer *get_termuxdc_buffer() {
 const termuxdc_native_handle_t *get_native_handler() {
     if (termuxBuffer &&
         termuxBuffer->buffer) {
-        return termuxBuffer->getNativeHandle(termuxBuffer->buffer);
+        const termuxdc_native_handle_t *t = termuxBuffer->getNativeHandle(termuxBuffer->buffer);
+        if (t){
+            printf("get_native_handler:%s\n", "success");
+        }else{
+            printf("get_native_handler:%s\n", "failed");
+        }
+        return t;
     }
+    printf("get_native_handler:%s\n", "termuxdc buffer not initialization");
     return nullptr;
 }
 
