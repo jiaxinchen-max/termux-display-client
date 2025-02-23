@@ -73,8 +73,8 @@ bool termuxdc_buffer_ahb_fun_unload(struct termuxdc_buffer *buffer) {
 void sig_term_handler(int signum, siginfo_t *info, void *ptr) {
     write(STDERR_FILENO, SIGTERM_MSG, sizeof(SIGTERM_MSG));
     display_destroy();
-    termuxdc_buffer_ahb_fun_unload(termuxBuffer);
-    free(termuxBuffer);
+//    termuxdc_buffer_ahb_fun_unload(termuxBuffer);
+//    free(termuxBuffer);
 }
 
 void catch_sig_term() {
@@ -157,11 +157,11 @@ int display_client_init(uint32_t width, uint32_t height, uint32_t channel) {
         clientRenderer->SetImageGeometry(width, height, channel);
     }
 
-    termuxBuffer = static_cast<termuxdc_buffer *>(malloc(sizeof(termuxdc_buffer)));
-    if(termuxBuffer){
-        printf("%s\n", "success to allocate termuxBuffer.");
-    }
-    termuxdc_buffer_ahb_func_load(termuxBuffer);
+//    termuxBuffer = static_cast<termuxdc_buffer *>(malloc(sizeof(termuxdc_buffer)));
+//    if(termuxBuffer){
+//        printf("%s\n", "success to allocate termuxBuffer.");
+//    }
+//    termuxdc_buffer_ahb_func_load(termuxBuffer);
 
     return ret;
 }
