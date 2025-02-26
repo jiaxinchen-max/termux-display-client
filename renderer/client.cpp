@@ -50,8 +50,8 @@ bool termuxdc_buffer_ahb_func_load(struct termuxdc_buffer *buffer) {
     }
     if ((buffer->getNativeHandle = (const termuxdc_native_handle_t *(*)(
             const AHardwareBuffer *)) dlsym(
-            buffer->dlhandle, "AHardwareBuffer_describe")) == NULL) {
-        printf("load symbol AHardwareBuffer_describe failed %s\n", dlerror());
+            buffer->dlhandle, "AHardwareBuffer_getNativeHandle")) == NULL) {
+        printf("load symbol AHardwareBuffer_getNativeHandle failed %s\n", dlerror());
         dlclose(buffer->dlhandle);
         return false;
     }
