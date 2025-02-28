@@ -129,7 +129,6 @@ void client_setup() {
 
 int display_client_init(uint32_t width, uint32_t height, uint32_t channel) {
     printf("%s\n", "    CLIENT_CMD_INIT");
-    sleep(1);
     if (dataSocket < 0) {
         client_setup();
         AHardwareBuffer_Desc hwDesc;
