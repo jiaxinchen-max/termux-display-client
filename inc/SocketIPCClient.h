@@ -9,10 +9,13 @@ public:
     static SocketIPCClient *GetInstance();
 
     int Init(AHardwareBuffer *hwBuffer, int dataSocket);
-    void SetImageGeometry(uint32_t w,uint32_t h,uint32_t ch);
-    int Draw(const uint8_t* data);
-    int BeginDraw(const uint8_t* data);
-    int BeginDraw(void* data_ptr);
+
+    void SetImageGeometry(uint32_t w, uint32_t h, uint32_t ch);
+
+    int Draw(const uint8_t *data);
+
+    int BeginDraw(void *data_ptr);
+
     int EndDraw();
 
     void Destroy();

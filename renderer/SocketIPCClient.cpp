@@ -99,26 +99,6 @@ int SocketIPCClient::Draw(const uint8_t *data) {
     return ret;
 }
 
-int SocketIPCClient::BeginDraw(const uint8_t *data) {
-    if (m_ImgWidth < 1 ||
-        m_ImgHeight < 1) {
-        printf("%s\n", "Display Geometry Size Not Set");
-        return -1;
-    }
-    int ret;
-    void *shared_buffer;
-    ret = AHardwareBuffer_lock(buffer,
-                               AHARDWAREBUFFER_USAGE_CPU_WRITE_MASK,
-                               -1, // no fence in demo
-                               NULL,
-                               &shared_buffer);
-    if (ret != 0) {
-        printf("%s\n", "Failed to AHardwareBuffer_lock");
-    }
-    memcpy(shared_buffer, data, m_ImgWidth * m_ImgWidth * sizeof(uint32_t));
-    return ret;
-}
-
 int SocketIPCClient::BeginDraw(void *data) {
     if (m_ImgWidth < 1 ||
         m_ImgHeight < 1) {
