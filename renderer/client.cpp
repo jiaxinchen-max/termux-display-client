@@ -261,6 +261,12 @@ int begin_display_draw(void **data) {
     }
     return -1;
 }
+int begin_display_draw(void *data) {
+    if (clientRenderer) {
+        return clientRenderer->BeginDraw(reinterpret_cast<const uint8_t *>(data));
+    }
+    return -1;
+}
 
 int end_display_draw() {
     if (clientRenderer) {
