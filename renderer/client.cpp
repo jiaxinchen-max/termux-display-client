@@ -137,8 +137,8 @@ int display_client_init(uint32_t width, uint32_t height, uint32_t channel) {
         hwDesc.height = height;
         hwDesc.layers = 1;
         hwDesc.usage =
-                AHARDWAREBUFFER_USAGE_CPU_READ_NEVER | AHARDWAREBUFFER_USAGE_CPU_WRITE_NEVER
-                | AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT |
+                AHARDWAREBUFFER_USAGE_CPU_READ_OFTEN |
+                AHARDWAREBUFFER_USAGE_CPU_WRITE_OFTEN |
                 AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE;
         int rtCode = AHardwareBuffer_allocate(&hwDesc, &hwBuffer);
         if (rtCode != 0 || !hwBuffer) {
