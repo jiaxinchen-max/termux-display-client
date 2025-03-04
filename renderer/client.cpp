@@ -136,9 +136,6 @@ int display_client_init(uint32_t width, uint32_t height, uint32_t channel) {
         hwDesc.width = width;
         hwDesc.height = height;
         hwDesc.layers = 1;
-        hwDesc.rfu0 = 0;
-        hwDesc.rfu1 = 0;
-        hwDesc.stride = 0;
         hwDesc.usage =
                 AHARDWAREBUFFER_USAGE_CPU_READ_NEVER | AHARDWAREBUFFER_USAGE_CPU_WRITE_NEVER
                 | AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT |
