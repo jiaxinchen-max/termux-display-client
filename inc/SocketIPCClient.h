@@ -12,7 +12,7 @@ public:
 
     void SetImageGeometry(uint32_t w, uint32_t h, uint32_t ch);
 
-    int Draw(const uint8_t *data);
+    int Draw(const uint8_t **data);
 
     int BeginDraw(void **data_ptr);
 

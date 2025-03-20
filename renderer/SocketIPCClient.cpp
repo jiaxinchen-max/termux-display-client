@@ -75,7 +75,7 @@ void SocketIPCClient::SetImageGeometry(uint32_t w, uint32_t h, uint32_t ch) {
     m_ImgChannel = ch;
 }
 
-int SocketIPCClient::Draw(const uint8_t *data) {
+int SocketIPCClient::Draw(const uint8_t **data) {
     if (m_ImgWidth < 1 ||
         m_ImgHeight < 1) {
         printf("%s\n", "Display Geometry Size Not Set");
