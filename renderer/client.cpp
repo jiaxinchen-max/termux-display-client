@@ -56,12 +56,6 @@ bool termuxdc_buffer_ahb_func_load(struct termuxdc_buffer *buffer) {
         return false;
     }
     printf("load symbols succeed %s\n", "ok");
-
-    buffer->begin_draw = begin_display_draw;
-    buffer->end_draw = end_display_draw;
-
-    printf("load function symbol  succeed %s\n", "ok");
-
     return true;
 }
 
@@ -245,20 +239,6 @@ int display_client_start() {
     close(epoll_fd);
     close(timer_fd);
     return 0;
-}
-
-int begin_display_draw(void **data) {
-    if (clientRenderer) {
-        return clientRenderer->BeginDraw(data);
-    }
-    return -1;
-}
-
-int end_display_draw() {
-    if (clientRenderer) {
-        return clientRenderer->EndDraw();
-    }
-    return -1;
 }
 
 void display_destroy() {

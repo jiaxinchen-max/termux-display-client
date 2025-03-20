@@ -13,11 +13,7 @@ int display_client_init(uint32_t width, uint32_t height, uint32_t channel);
 
 int display_client_start();
 
-int begin_display_draw(void **data);
-
 void display_destroy();
-
-int end_display_draw();
 
 void event_socket_init(InputHandler handler);
 

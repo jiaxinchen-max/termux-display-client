@@ -45,6 +45,7 @@ typedef struct {
 struct termuxdc_buffer {
     uint32_t format;
     AHardwareBuffer_Desc desc;
+    void *data;
     AHardwareBuffer* buffer;
     void *dlhandle;
     int (*lock)(AHardwareBuffer *buffer,
@@ -55,6 +56,4 @@ struct termuxdc_buffer {
     int (*unlock)(AHardwareBuffer *buffer, int32_t *fence);
     void (*describe)(const AHardwareBuffer *buffer, AHardwareBuffer_Desc *outDesc);
     const termuxdc_native_handle_t *(*getNativeHandle)(const AHardwareBuffer *buffer);
-    int (*begin_draw)(void **outVirtualAddress);
-    int (*end_draw)();
 };
