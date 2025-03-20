@@ -122,6 +122,9 @@ void client_setup() {
 }
 
 int display_client_init(uint32_t width, uint32_t height, uint32_t channel) {
+    if (hwBuffer){
+        return 0;
+    }
     printf("%s\n", "    CLIENT_CMD_INIT");
     if (dataSocket < 0) {
         client_setup();
