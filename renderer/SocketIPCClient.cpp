@@ -15,7 +15,8 @@ int SocketIPCClient::Draw() {
     int ret;
     void *shared_buffer;
     ret = AHardwareBuffer_lock(buffer,
-                               AHARDWAREBUFFER_USAGE_CPU_WRITE_MASK,
+                               AHARDWAREBUFFER_USAGE_CPU_READ_RARELY |
+                               AHARDWAREBUFFER_USAGE_CPU_WRITE_RARELY,
                                -1, // no fence in demo
                                NULL,
                                &shared_buffer);
@@ -83,7 +84,8 @@ int SocketIPCClient::Draw(const uint8_t *data) {
     int ret;
     void *shared_buffer;
     ret = AHardwareBuffer_lock(buffer,
-                               AHARDWAREBUFFER_USAGE_CPU_WRITE_MASK,
+                               AHARDWAREBUFFER_USAGE_CPU_READ_RARELY |
+                               AHARDWAREBUFFER_USAGE_CPU_WRITE_RARELY,
                                -1, // no fence in demo
                                NULL,
                                &shared_buffer);
@@ -99,7 +101,7 @@ int SocketIPCClient::Draw(const uint8_t *data) {
     return ret;
 }
 
-int SocketIPCClient::BeginDraw(void *data) {
+int SocketIPCClient::BeginDraw(void **data) {
     if (m_ImgWidth < 1 ||
         m_ImgHeight < 1) {
         printf("%s\n", "Display Geometry Size Not Set");
@@ -107,10 +109,11 @@ int SocketIPCClient::BeginDraw(void *data) {
     }
     int ret;
     ret = AHardwareBuffer_lock(buffer,
-                               AHARDWAREBUFFER_USAGE_CPU_WRITE_MASK,
+                               AHARDWAREBUFFER_USAGE_CPU_READ_RARELY |
+                               AHARDWAREBUFFER_USAGE_CPU_WRITE_RARELY,
                                -1, // no fence in demo
                                NULL,
-                               &data);
+                               data);
     if (ret != 0) {
         printf("%s\n", "Failed to AHardwareBuffer_lock");
     }

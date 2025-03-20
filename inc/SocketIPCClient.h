@@ -14,7 +14,7 @@ public:
 
     int Draw(const uint8_t *data);
 
-    int BeginDraw(void *data_ptr);
+    int BeginDraw(void **data_ptr);
 
     int EndDraw();
 
