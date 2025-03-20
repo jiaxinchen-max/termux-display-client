@@ -15,7 +15,7 @@ int display_client_start();
 
 int display_draw(void **data);
 
-int begin_display_draw(void *data);
+int begin_display_draw(void **data);
 
 void display_destroy();
 
