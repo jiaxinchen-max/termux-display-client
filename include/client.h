@@ -17,6 +17,8 @@ void display_destroy();
 
 void event_socket_init(InputHandler handler);
 
+void event_socket_init_default();
+
 void event_socket_destroy();
 
 int get_input_socket();
