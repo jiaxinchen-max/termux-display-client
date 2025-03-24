@@ -9,6 +9,7 @@ class termuxdc_server {
 public:
 
     void Init();
+    void InitDefault();
 
     void Destroy();
 

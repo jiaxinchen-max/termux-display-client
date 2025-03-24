@@ -41,6 +41,34 @@ void termuxdc_server::Init() {
     pthread_create(&t, nullptr, work, this);
 }
 
+void termuxdc_server::InitDefault() {
+    char socketName[108];
+    struct sockaddr_un serverAddr;
+
+    dataSocket = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (dataSocket < 0) {
+        printf("socket: %s", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+
+    memcpy(&socketName[0], "\0", 1);
+    strcpy(&socketName[1], SOCKET_NAME);
+
+    memset(&serverAddr, 0, sizeof(struct sockaddr_un));
+    serverAddr.sun_family = AF_UNIX;
+    strncpy(serverAddr.sun_path, socketName, sizeof(serverAddr.sun_path) - 1);
+
+    // connect
+    int ret = connect(dataSocket, reinterpret_cast<const sockaddr *>(&serverAddr),
+                      sizeof(struct sockaddr_un));
+    if (ret < 0) {
+        printf("connect: %s", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+
+    printf("%s\n", "Input Server Setup complete.");
+}
+
 void termuxdc_server::Destroy() {
     reset();
 }

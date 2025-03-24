@@ -264,7 +264,7 @@ void event_socket_init(InputHandler handler) {
 
 void event_socket_init_default() {
     inputServer = new termuxdc_server;
-    inputServer->Init();
+    inputServer->InitDefault();
 };
 
 void event_socket_destroy() {
