@@ -281,7 +281,7 @@ int get_input_socket() {
 }
 
 int event_wait(termuxdc_event *event) {
-    printf("event_wait %d\n",event->type);
+//    printf("event_wait %d\n",event->type);
     if (inputServer) {
         return inputServer->waitEvent(event);
     }

@@ -110,11 +110,10 @@ bool termuxdc_server::isRunning() {
 void termuxdc_server::setRunning(bool run) {
     running = run;
 }
-ssize_t recv_fixed_size(int sockfd, void *buffer, size_t length) {
+ssize_t termuxdc_server::recv_event(int sockfd, void *buffer, size_t length) {
     size_t total_received = 0;
     ssize_t bytes_received;
     char *buf = (char *)buffer;
-
     while (total_received < length) {
         bytes_received = recv(sockfd, buf + total_received, length - total_received, 0);
         if (bytes_received <= 0) {
@@ -123,12 +122,11 @@ ssize_t recv_fixed_size(int sockfd, void *buffer, size_t length) {
         }
         total_received += bytes_received;
     }
-
     return total_received;
 }
 int termuxdc_server::waitEvent(termuxdc_event *event) {
     if (dataSocket > 0) {
-        ssize_t result = recv_fixed_size(dataSocket, event, sizeof (termuxdc_event));
+        ssize_t result = recv_event(dataSocket, event, sizeof(*event));
         if (result < 0) {
             perror("recv");
         } else if (result == 0) {

@@ -26,6 +26,7 @@ public:
     bool isRunning();
     void setRunning(bool run);
 
+    ssize_t recv_event(int sockfd, void *buffer, size_t length);
     int waitEvent(termuxdc_event *event);
 
 private:
