@@ -129,13 +129,13 @@ int termuxdc_server::waitEvent(termuxdc_event *event) {
     if (dataSocket > 0) {
         ssize_t result = recv_event(dataSocket, event, sizeof(*event));
         if (result < 0) {
-            perror("recv");
+//            perror("recv");
             return result;
         } else if (result == 0) {
-            printf("Connection closed by peer\n");
+//            printf("Connection closed by peer\n");
             return -1;
         } else {
-            printf("Received %zd bytes of data\n", result);
+//            printf("Received %zd bytes of data\n", result);
             return 0;
         }
     } else {
