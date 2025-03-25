@@ -125,7 +125,7 @@ ssize_t termuxdc_server::recv_event(int sockfd, void *buffer, size_t length) {
     return total_received;
 }
 int termuxdc_server::waitEvent(termuxdc_event *event) {
-    printf("<======waitEvent========>\n");
+//    printf("<======waitEvent========>\n");
     if (dataSocket > 0) {
         ssize_t result = recv_event(dataSocket, event, sizeof(*event));
         if (result < 0) {
