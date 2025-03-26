@@ -146,11 +146,11 @@ int display_client_init(uint32_t width, uint32_t height, uint32_t channel) {
             exit(EXIT_FAILURE);
         }
 
-        termuxBuffer = static_cast<termuxdc_buffer *>(malloc(sizeof(termuxdc_buffer)));
+        termuxBuffer = static_cast<termuxdc_buffer *>(calloc(1, sizeof(termuxdc_buffer)));
         if(termuxBuffer){
             termuxBuffer->buffer = hwBuffer;
             termuxdc_buffer_ahb_func_load(termuxBuffer);
-            printf("%s\n", "success to allocate termuxBuffer.");
+            printf("%s\n", "success to allocate termux buffer.");
         }
     }
 
