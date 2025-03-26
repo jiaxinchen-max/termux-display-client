@@ -4,6 +4,7 @@
 #ifndef EVENT_TYPE_ENUM
 #define EVENT_TYPE_ENUM
 typedef enum {
+    NONE,
     EVENT_SCREEN_SIZE,
     EVENT_TOUCH,
     EVENT_MOUSE,
