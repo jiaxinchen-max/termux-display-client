@@ -135,7 +135,7 @@ int termuxdc_server::waitEvent(termuxdc_event *event) {
 //            printf("Connection closed by peer\n");
             return -1;
         } else {
-            printf("Received %zd bytes of data\n", result);
+//            printf("Received %zd bytes of data\n", result);
             return result-sizeof(termuxdc_event);
         }
     } else {
