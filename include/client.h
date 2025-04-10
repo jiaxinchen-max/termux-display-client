@@ -28,6 +28,7 @@ int event_wait(termuxdc_event *event);
 struct termuxdc_buffer *get_termuxdc_buffer();
 
 const termuxdc_native_handle_t *get_native_handler();
+void draw_frame();
 
 #ifdef __cplusplus
 }

@@ -306,5 +306,10 @@ const termuxdc_native_handle_t *get_native_handler() {
     printf("get_native_handler:%s\n", "termuxdc buffer not initialization");
     return nullptr;
 }
-
+void draw_frame(){
+    if (inputServer){
+        termuxdc_event ev = {.type=EVENT_DRAW_FRAME};
+        send(inputServer->GetDataSocket(), &ev, sizeof(ev), MSG_DONTWAIT);
+    }
+}
 
