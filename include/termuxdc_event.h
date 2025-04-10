@@ -22,8 +22,11 @@ typedef enum {
     EVENT_TOUCH_UP,
     EVENT_TOUCH_MOVE,
     EVENT_TOUCH_POINTER_UP,
+    EVENT_DRAW_FRAME,
 } event_type;
 #endif
+#ifndef TERMUX_EVENT
+#define TERMUX_EVENT
 typedef struct {
     uint8_t num_pointers;
     uint8_t t;
@@ -71,7 +74,11 @@ typedef union {
         uint8_t t;
         uint32_t count;
     } clipboardSend;
+    struct {
+        uint64_t timestamp;
+    } frame;
 } termuxdc_event;
+#endif
 typedef enum {
     /// No modifier pressed.
     TDC_MOD_NONE = 0,
