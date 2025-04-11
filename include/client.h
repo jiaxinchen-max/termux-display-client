@@ -9,7 +9,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-int display_client_init(uint32_t width, uint32_t height, uint32_t channel);
+int display_client_init(uint32_t width, uint32_t height);
 
 int display_client_start();
 

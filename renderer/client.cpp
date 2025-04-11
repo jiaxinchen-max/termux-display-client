@@ -121,7 +121,7 @@ void client_setup() {
     printf("%s\n", "Client setup complete.");
 }
 
-int display_client_init(uint32_t width, uint32_t height, uint32_t channel) {
+int display_client_init(uint32_t width, uint32_t height) {
     if (hwBuffer){
         return 0;
     }
@@ -154,12 +154,8 @@ int display_client_init(uint32_t width, uint32_t height, uint32_t channel) {
         }
     }
 
-    clientRenderer = SocketIPCClient::GetInstance();
-    int ret = clientRenderer->Init(hwBuffer, dataSocket);
-    if (ret == 0) {
-        clientRenderer->SetImageGeometry(width, height, channel);
-    }
-
+    clientRenderer = SocketIPCClient::getInstance();
+    int ret = clientRenderer->init(hwBuffer, dataSocket);
     return ret;
 }
 
@@ -234,7 +230,7 @@ int display_client_start() {
                     return 0;
                 }
                 if (clientRenderer) {
-                    clientRenderer->Draw();
+                    clientRenderer->draw();
                 }
             }
         }
@@ -246,36 +242,35 @@ int display_client_start() {
 
 void display_destroy() {
     termuxdc_event ev = {.type=EVENT_CLIENT_EXIT};
-    send(inputServer->GetDataSocket(), &ev, sizeof(ev), MSG_DONTWAIT);
+    send(inputServer->getDataSocket(), &ev, sizeof(ev), MSG_DONTWAIT);
     isRunning = false;
     close(epoll_fd);
     close(timer_fd);
-    inputServer->Destroy();
-    clientRenderer->Destroy();
+    inputServer->destroy();
     AHardwareBuffer_release(hwBuffer);
     close(dataSocket);
 }
 
 void event_socket_init(InputHandler handler) {
     inputServer = new termuxdc_server;
-    inputServer->Init();
-    inputServer->SetInputHandler(handler);
+    inputServer->init();
+    inputServer->setInputHandler(handler);
 };
 
 void event_socket_init_default() {
     inputServer = new termuxdc_server;
-    inputServer->InitDefault();
+    inputServer->initDefault();
 };
 
 void event_socket_destroy() {
     if (inputServer) {
-        inputServer->Destroy();
+        inputServer->destroy();
     }
 }
 
 int get_input_socket() {
     if (inputServer) {
-        return inputServer->GetDataSocket();
+        return inputServer->getDataSocket();
     }
     return -1;
 }
@@ -309,7 +304,7 @@ const termuxdc_native_handle_t *get_native_handler() {
 void draw_frame(){
     if (inputServer){
         termuxdc_event ev = {.type=EVENT_DRAW_FRAME};
-        send(inputServer->GetDataSocket(), &ev, sizeof(ev), MSG_DONTWAIT);
+        send(inputServer->getDataSocket(), &ev, sizeof(ev), MSG_DONTWAIT);
     }
 }
 

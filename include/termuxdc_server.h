@@ -8,25 +8,25 @@
 class termuxdc_server {
 public:
 
-    void Init();
-    void InitDefault();
+    void init();
+    void initDefault();
 
-    void Destroy();
+    void destroy();
 
-    int GetDataSocket();
+    int getDataSocket();
 
-    termuxdc_event_callback *GetCallback();
+    termuxdc_event_callback *getCallback();
 
-    void SetCallback(termuxdc_event_callback *ca);
+    void setCallback(termuxdc_event_callback *ca);
 
-    void SetInputHandler(InputHandler handler);
+    void setInputHandler(InputHandler handler);
 
-    InputHandler GetInputHandler();
+    InputHandler getInputHandler();
 
     bool isRunning();
     void setRunning(bool run);
 
-    ssize_t recv_event( void *buffer, size_t length);
+    ssize_t recvEvent(void *buffer, size_t length);
     int waitEvent(termuxdc_event *event);
 
 private:

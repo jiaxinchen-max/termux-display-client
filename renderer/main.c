@@ -6,7 +6,7 @@ void inputCallback(termuxdc_event ev) {
     printf("%d\n", ev.type);
 }
 int main(int argc,const char** argv){
-    display_client_init(800, 600, 4);
+    display_client_init(800, 600);
     event_socket_init(inputCallback);
     display_client_start();
     return 0;

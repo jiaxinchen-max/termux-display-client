@@ -12,7 +12,7 @@
 #define SOCKET_NAME     "shard_texture_socket"
 #endif
 
-void termuxdc_server::Init() {
+void termuxdc_server::init() {
     char socketName[108];
     struct sockaddr_un serverAddr;
 
@@ -41,7 +41,7 @@ void termuxdc_server::Init() {
     pthread_create(&t, nullptr, work, this);
 }
 
-void termuxdc_server::InitDefault() {
+void termuxdc_server::initDefault() {
     char socketName[108];
     struct sockaddr_un serverAddr;
 
@@ -69,7 +69,7 @@ void termuxdc_server::InitDefault() {
     printf("%s\n", "Input Server Setup complete.");
 }
 
-void termuxdc_server::Destroy() {
+void termuxdc_server::destroy() {
     reset();
 }
 
@@ -78,15 +78,15 @@ void termuxdc_server::reset() {
     close(dataSocket);
 }
 
-int termuxdc_server::GetDataSocket() {
+int termuxdc_server::getDataSocket() {
     return dataSocket;
 }
 
-termuxdc_event_callback *termuxdc_server::GetCallback() {
+termuxdc_event_callback *termuxdc_server::getCallback() {
     return inputEventCallback;
 }
 
-void termuxdc_server::SetCallback(termuxdc_event_callback *ca) {
+void termuxdc_server::setCallback(termuxdc_event_callback *ca) {
     inputEventCallback = ca;
 }
 
@@ -95,11 +95,11 @@ termuxdc_server::~termuxdc_server() {
     delete inputEventCallback;
 }
 
-InputHandler termuxdc_server::GetInputHandler() {
+InputHandler termuxdc_server::getInputHandler() {
     return inputHandler;
 }
 
-void termuxdc_server::SetInputHandler(InputHandler handler) {
+void termuxdc_server::setInputHandler(InputHandler handler) {
     inputHandler = handler;
 }
 
@@ -110,7 +110,7 @@ bool termuxdc_server::isRunning() {
 void termuxdc_server::setRunning(bool run) {
     running = run;
 }
-ssize_t termuxdc_server::recv_event(void *buffer, size_t length) {
+ssize_t termuxdc_server::recvEvent(void *buffer, size_t length) {
     size_t total_received = 0;
     ssize_t bytes_received;
     char *buf = (char *)buffer;
@@ -127,7 +127,7 @@ ssize_t termuxdc_server::recv_event(void *buffer, size_t length) {
 int termuxdc_server::waitEvent(termuxdc_event *event) {
 //    printf("<======waitEvent========>\n");
     if (dataSocket > 0) {
-        ssize_t result = recv_event( event, sizeof(termuxdc_event));
+        ssize_t result = recvEvent(event, sizeof(termuxdc_event));
         if (result < 0) {
 //            perror("recv");
             return result;
@@ -148,11 +148,11 @@ void *work(void *args) {
     server->setRunning(true);
     while (server->isRunning()) {
         termuxdc_event buf;
-        recv(server->GetDataSocket(), &buf, sizeof(buf), MSG_WAITALL);
-        if (server->GetInputHandler()) {
-            server->GetInputHandler()(buf);
-        } else if (server->GetCallback()) {
-            server->GetCallback()->callback(buf);
+        recv(server->getDataSocket(), &buf, sizeof(buf), MSG_WAITALL);
+        if (server->getInputHandler()) {
+            server->getInputHandler()(buf);
+        } else if (server->getCallback()) {
+            server->getCallback()->callback(buf);
         } else {
             server->setRunning(false);
         }
