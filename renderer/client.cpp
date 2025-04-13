@@ -304,7 +304,7 @@ const termuxdc_native_handle_t *get_native_handler() {
 void draw_frame(){
     if (inputServer){
         termuxdc_event ev = {.type=EVENT_DRAW_FRAME};
-        send(inputServer->getDataSocket(), &ev, sizeof(ev), MSG_DONTWAIT);
+        inputServer->sendEvent(&ev);
     }
 }
 

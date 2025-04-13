@@ -28,6 +28,7 @@ public:
 
     ssize_t recvEvent(void *buffer, size_t length);
     int waitEvent(termuxdc_event *event);
+    int sendEvent(termuxdc_event *event);
 
 private:
     int dataSocket;
