@@ -142,20 +142,13 @@ int termuxdc_server::waitEvent(termuxdc_event *event) {
         return -1;
     }
 }
-int termuxdc_server::sendEvent(termuxdc_event *event){
-    send(dataSocket, event, sizeof(termuxdc_event), MSG_DONTWAIT);
-}
 
 void *work(void *args) {
     auto *server = static_cast<termuxdc_server *>(args);
     server->setRunning(true);
     while (server->isRunning()) {
         termuxdc_event buf;
-        server->waitEvent(&buf);
-        if (buf.type==EVENT_FRAME_COMPLETE){
-            termuxdc_event ev = {.type=EVENT_DRAW_FRAME};
-            server->sendEvent(&ev);
-        }
+        recv(server->getDataSocket(), &buf, sizeof(buf), MSG_WAITALL);
         if (server->getInputHandler()) {
             server->getInputHandler()(buf);
         } else if (server->getCallback()) {

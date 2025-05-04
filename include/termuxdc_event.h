@@ -1,6 +1,8 @@
 #ifndef INPUT_EVENT_H
 #define INPUT_EVENT_H
+
 #include <stdint.h>
+
 #ifndef EVENT_TYPE_ENUM
 #define EVENT_TYPE_ENUM
 typedef enum {
@@ -25,6 +27,28 @@ typedef enum {
     EVENT_DRAW_FRAME,
 } event_type;
 #endif
+#ifndef TERMUX_DC_EVENT_TYPE_ENUM
+#define TERMUX_DC_EVENT_TYPE_ENUM
+typedef enum {
+    /// Send when the first pointer touches.
+    TDC_TOUCH_DOWN = 0,
+    /// Send when the last pointer goes up.
+    TDC_TOUCH_UP = 1,
+    /// Send when an additional pointer touches.
+    TDC_TOUCH_POINTER_DOWN = 2,
+    /// Send when an additional pointer goes up.
+    TDC_TOUCH_POINTER_UP = 3,
+    /// Like `TOUCH_UP`, but the gesture was cancelled.
+    TDC_TOUCH_CANCEL = 4,
+    /// Send when pointers have been moved.
+    TDC_TOUCH_MOVE = 5,
+} termuxdc_touch_action;
+typedef struct {
+    int x;
+    int y;
+    int id;
+} termuxdc_touch_pointer;
+#endif
 #ifndef TERMUX_EVENT
 #define TERMUX_EVENT
 typedef struct {
@@ -40,6 +64,14 @@ typedef union {
     } screenSize;
     touch_event touch;
     touch_event touch_events[4];
+    struct {
+        termuxdc_touch_action action;
+        termuxdc_touch_pointer **pointers;
+        uint32_t events;
+        uint32_t num_pointers;
+        uint32_t index;
+        uint64_t time;
+    } raw_touch;
     struct {
         uint8_t t;
         float x, y;
