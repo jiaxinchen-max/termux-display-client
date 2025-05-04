@@ -30,19 +30,20 @@ typedef enum {
 #ifndef TERMUX_DC_EVENT_TYPE_ENUM
 #define TERMUX_DC_EVENT_TYPE_ENUM
 typedef enum {
-    /// Send when the first pointer touches.
     TDC_TOUCH_DOWN = 0,
-    /// Send when the last pointer goes up.
     TDC_TOUCH_UP = 1,
-    /// Send when an additional pointer touches.
     TDC_TOUCH_POINTER_DOWN = 2,
-    /// Send when an additional pointer goes up.
     TDC_TOUCH_POINTER_UP = 3,
-    /// Like `TOUCH_UP`, but the gesture was cancelled.
     TDC_TOUCH_CANCEL = 4,
-    /// Send when pointers have been moved.
     TDC_TOUCH_MOVE = 5,
 } termuxdc_touch_action;
+typedef enum {
+    TDC_MOUSE_UNDFINE = 0,
+    TDC_MOUSE_LEFT_BUTTON = 1,
+    TDC_MOUSE_MIDDLE_BUTTON = 2,
+    TDC_MOUSE_RIGHT_BUTTON = 3,
+    TDC_MOUSE_SCROLL = 4,
+} termuxdc_mouse_action;
 typedef struct {
     int x;
     int y;
