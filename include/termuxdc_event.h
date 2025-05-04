@@ -38,7 +38,7 @@ typedef enum {
     TDC_TOUCH_MOVE = 5,
 } termuxdc_touch_action;
 typedef enum {
-    TDC_MOUSE_UNDFINE = 0,
+    TDC_MOUSE_UNDEFINE = 0,
     TDC_MOUSE_LEFT_BUTTON = 1,
     TDC_MOUSE_MIDDLE_BUTTON = 2,
     TDC_MOUSE_RIGHT_BUTTON = 3,
