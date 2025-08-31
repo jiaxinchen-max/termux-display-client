@@ -1,21 +1,24 @@
 cmake_minimum_required(VERSION 3.10.1)
 project(termux-display-client)
 
-find_package(x11 REQUIRED)
-find_package(xserver REQUIRED)
+find_package(X11 REQUIRED)
+find_package(PkgConfig REQUIRED)
+
+pkg_check_modules(LIBPIXMAN REQUIRED IMPORTED_TARGET pixman-1)
+
 
 include_directories(inc)
 include_directories(include)
+include_directories(xserver/include)
 include_directories(${X11_INCLUDE_DIR})
-include_directories(${XSERVER_INCLUDE_DIR})
 
 add_library(termux-display-lorie
         SHARED
         renderer/buffer.c
 )
 target_link_libraries(termux-display-lorie
-        ${XSERVER_LIBS}
         ${X11_LIBS}
+        PRIVATE PkgConfig::LIBPIXMAN
         log
         android
 )
