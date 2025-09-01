@@ -7,6 +7,7 @@
 #define GL_GLEXT_PROTOTYPES
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <math.h>
 #include <pixman.h>
 #include <stdbool.h>
