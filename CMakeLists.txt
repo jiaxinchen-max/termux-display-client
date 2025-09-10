@@ -11,19 +11,9 @@ include_directories(inc)
 include_directories(include)
 include_directories(xserver/include)
 
-add_library(termux-display-lorie
-        SHARED
-        renderer/buffer.c
-)
-target_link_libraries(termux-display-lorie
-        PRIVATE PkgConfig::X11
-        PRIVATE PkgConfig::LIBPIXMAN
-        log
-        android
-)
-
 add_library(termux-display-client
         SHARED
+        renderer/buffer.c
         renderer/client.cpp
         renderer/SocketIPCClient.cpp
         renderer/termuxdc_server.cpp
@@ -32,11 +22,12 @@ add_library(termux-display-client
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 
 target_link_libraries(termux-display-client
+        PRIVATE PkgConfig::X11
+        PRIVATE PkgConfig::LIBPIXMAN
         log
         android
 )
 install(TARGETS termux-display-client LIBRARY)
-install(TARGETS termux-display-lorie LIBRARY)
 install(DIRECTORY include/ DESTINATION include/termux/display/client)
 
 add_executable(termux-display-client-entity renderer/main.c)
