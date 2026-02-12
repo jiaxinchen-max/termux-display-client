@@ -60,8 +60,8 @@ static void OsVendorInit(void) {
 static void waylandApplyBuffer() {
     LorieBuffer_recvHandleFromUnixSocket(conn_fd, &lorieBuffer);
     const LorieBuffer_Desc *desc = LorieBuffer_description(lorieBuffer);
-    syslog(LOG_INFO,  "Receive shared buffer width %d stride %d height %d format %d type %d id %llu",
-        desc->width, desc->stride, desc->height, desc->format, desc->type, desc->id);
+    syslog(LOG_INFO, "Receive shared buffer width %d stride %d height %d format %d type %d id %llu",
+           desc->width, desc->stride, desc->height, desc->format, desc->type, desc->id);
     OsVendorInit();
     pthread_mutex_lock(&mutex);
     pthread_cond_signal(&cond);
@@ -83,13 +83,13 @@ static void waylandApplySharedServerState() {
     stateFd = ancil_recv_fd(conn_fd);
 
     if (stateFd < 0) {
-        syslog(LOG_ERR,  "Failed to parse server state: %s", strerror(errno));
+        syslog(LOG_ERR, "Failed to parse server state: %s", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
     serverState = mmap(NULL, sizeof(*serverState), PROT_READ | PROT_WRITE, MAP_SHARED, stateFd, 0);
     if (!serverState || serverState == MAP_FAILED) {
-        syslog(LOG_ERR,  "Failed to map server state: %s", strerror(errno));
+        syslog(LOG_ERR, "Failed to map server state: %s", strerror(errno));
         serverState = NULL;
         exit(EXIT_FAILURE);
     }
@@ -135,6 +135,16 @@ static int callback() {
                     lorieEvent e = {0};
                     if (read(conn_fd, &e, sizeof(e)) == sizeof(e)) {
                         switch (e.type) {
+                            case EVENT_VERIFY_SUCCEED: {
+                                lorieEvent e = {.type = EVENT_APPLY_SERVER_STATE};
+                                ssize_t written_n = write(conn_fd, &e, sizeof(e));
+                                if (written_n != sizeof(e)) {
+                                    syslog(LOG_ERR, "write failed");
+                                    close(conn_fd);
+                                    close(epfd);
+                                    return EXIT_FAILURE;
+                                }
+                            }
                             case EVENT_SHARED_SERVER_STATE: {
                                 waylandApplySharedServerState();
                                 break;
@@ -192,7 +202,8 @@ int connectToRender() {
     if (ret < 0) {
         syslog(LOG_INFO, "connect: %s, retry %d", strerror(errno), connect_retry + 1);
         if (connect_retry >= MAX_RETRY_TIMES - 1) {
-            syslog(LOG_ERR, "connect: %s, failed after %d times", strerror(errno), connect_retry + 1);
+            syslog(LOG_ERR, "connect: %s, failed after %d times", strerror(errno),
+                   connect_retry + 1);
             close(conn_fd);
             exit(EXIT_FAILURE);
         }
@@ -215,15 +226,15 @@ int connectToRender() {
             close(epfd);
             return EXIT_FAILURE;
         }
-        lorieEvent e = {.type = EVENT_APPLY_SERVER_STATE};
-        ssize_t nwritten = write(conn_fd, &e, sizeof(e));
-        if (nwritten != sizeof(e)) {
-            syslog(LOG_ERR, "write failed");
+        char hello[] = MAGIC;
+        ssize_t written_n = write(conn_fd, hello, sizeof(hello));
+        if (written_n != sizeof(hello)) {
+            syslog(LOG_ERR, "write magic code failed");
             close(conn_fd);
             close(epfd);
             return EXIT_FAILURE;
         }
-        syslog(LOG_INFO, "Sent event to server: type=%d", e.type);
+        syslog(LOG_INFO, "Sent event to server: type=%s", hello);
         waylandRenderConnected();
     }
 
