@@ -253,7 +253,7 @@ const LorieBuffer_Desc* LorieBuffer_description(LorieBuffer* buffer) {
     return ret;
 }
 
-__LIBC_HIDDEN__ int LorieBuffer_unlock(LorieBuffer* buffer) {
+int LorieBuffer_unlock(LorieBuffer* buffer) {
     int ret = 0;
     if (!buffer)
         return ENODEV;
