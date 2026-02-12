@@ -1,4 +1,9 @@
 #include "include/syslog.h"
+#include <stdio.h>
+#include <stdarg.h>
+#include <time.h>
+#include <string.h>
+#include <errno.h>
 static const char* level_names[] = {
         "EMERG", "ALERT", "CRIT", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG"
 };

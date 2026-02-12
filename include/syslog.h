@@ -1,9 +1,3 @@
-#include <stdio.h>
-#include <stdarg.h>
-#include <time.h>
-#include <string.h>
-#include <errno.h>
-
 #define LOG_EMERG   0
 #define LOG_ALERT   1
 #define LOG_CRIT    2

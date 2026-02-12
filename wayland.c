@@ -167,16 +167,15 @@ static int callback() {
 
 static int waylandRenderConnected(void) {
     pthread_t t;
-    pthread_create(&t, NULL, (void *(*)(void *)) callback(), NULL);
+    pthread_create(&t, NULL, (void *(*)(void *)) callback, NULL);
     pthread_mutex_lock(&mutex);
     pthread_cond_wait(&cond, &mutex);
     pthread_mutex_unlock(&mutex);
     pthread_join(t, NULL);
+    return 0;
 }
 
 int connectToRender() {
-    int conn_fd;
-    int connect_retry = 0;
     struct sockaddr_un serverAddr;
 
     conn_fd = socket(AF_UNIX, SOCK_STREAM, 0);
