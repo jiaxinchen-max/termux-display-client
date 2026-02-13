@@ -13,7 +13,7 @@
 #include <sys/mman.h>
 #include "include/buffer.h"
 #include "include/wayland.h"
-#include "include/syslog.h"
+#include "include/tlog.h"
 
 static int conn_fd = -1, epfd = -1, stateFd = -1;
 static struct epoll_event ev, events[5];
@@ -62,7 +62,7 @@ static void WaylandVendorInit(void) {
 static void waylandApplyBuffer() {
     LorieBuffer_recvHandleFromUnixSocket(conn_fd, &lorieBuffer);
     const LorieBuffer_Desc *desc = LorieBuffer_description(lorieBuffer);
-    syslog(LOG_INFO, "Receive shared buffer width %d stride %d height %d format %d type %d id %llu",
+    tlog(LOG_INFO, "Receive shared buffer width %d stride %d height %d format %d type %d id %llu",
            desc->width, desc->stride, desc->height, desc->format, desc->type, desc->id);
 //    WaylandVendorInit();
 
@@ -88,13 +88,13 @@ static void waylandApplySharedServerState() {
     stateFd = ancil_recv_fd(conn_fd);
 
     if (stateFd < 0) {
-        syslog(LOG_ERR, "Failed to parse server state: %s", strerror(errno));
+        tlog(LOG_ERR, "Failed to parse server state: %s", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
     serverState = mmap(NULL, sizeof(*serverState), PROT_READ | PROT_WRITE, MAP_SHARED, stateFd, 0);
     if (!serverState || serverState == MAP_FAILED) {
-        syslog(LOG_ERR, "Failed to map server state: %s", strerror(errno));
+        tlog(LOG_ERR, "Failed to map server state: %s", strerror(errno));
         serverState = NULL;
         exit(EXIT_FAILURE);
     }
@@ -113,14 +113,14 @@ static void waylandDestroySharedServerState() {
 }
 
 static void *eventLoopThread(void *arg) {
-    syslog(LOG_INFO, "Event loop thread started");
+    tlog(LOG_INFO, "Event loop thread started");
     event_loop_running = 1;
 
     while (event_loop_running) {
         int nfds = epoll_wait(epfd, events, 5, 1000);  // 1 second timeout to check running flag
         if (nfds == -1) {
             if (errno == EINTR) continue; // Interrupted by signal, retry
-            syslog(LOG_ERR, "epoll_wait error: %s", strerror(errno));
+            tlog(LOG_ERR, "epoll_wait error: %s", strerror(errno));
             break;
         }
 
@@ -133,35 +133,35 @@ static void *eventLoopThread(void *arg) {
                     if (read(conn_fd, &e, sizeof(e)) == sizeof(e)) {
                         switch (e.type) {
                             case EVENT_VERIFY_SUCCEED: {
-                                syslog(LOG_INFO, "Verification succeeded");
+                                tlog(LOG_INFO, "Verification succeeded");
                                 lorieEvent req = {.type = EVENT_APPLY_SERVER_STATE};
                                 if (write(conn_fd, &req, sizeof(req)) != sizeof(req)) {
-                                    syslog(LOG_ERR, "Failed to send APPLY_SERVER_STATE");
+                                    tlog(LOG_ERR, "Failed to send APPLY_SERVER_STATE");
                                     goto cleanup;
                                 }
                                 break;
                             }
                             case EVENT_SHARED_SERVER_STATE: {
                                 waylandApplySharedServerState();
-                                syslog(LOG_INFO, "Server state initialized");
+                                tlog(LOG_INFO, "Server state initialized");
                                 break;
                             }
                             case EVENT_ADD_BUFFER: {
                                 waylandApplyBuffer();
-                                syslog(LOG_INFO, "Buffer initialized");
+                                tlog(LOG_INFO, "Buffer initialized");
                                 // Continue running to handle future events
                                 break;
                             }
                             default:
-                                syslog(LOG_WARNING, "Unknown event type: %d", e.type);
+                                tlog(LOG_WARNING, "Unknown event type: %d", e.type);
                                 break;
                         }
                     } else {
-                        syslog(LOG_ERR, "Incomplete event received");
+                        tlog(LOG_ERR, "Incomplete event received");
                         goto cleanup;
                     }
                 } else if (events[i].events & (EPOLLERR | EPOLLHUP)) {
-                    syslog(LOG_ERR, "Connection error/hangup detected");
+                    tlog(LOG_ERR, "Connection error/hangup detected");
                     goto cleanup;
                 }
             }
@@ -186,7 +186,7 @@ static void *eventLoopThread(void *arg) {
     }
 
     event_loop_running = 0;
-    syslog(LOG_INFO, "Event loop thread exited");
+    tlog(LOG_INFO, "Event loop thread exited");
     return NULL;
 }
 
@@ -201,7 +201,7 @@ static int waitForInitialization(void) {
         int ret = pthread_cond_timedwait(&cond, &mutex, &timeout);
         if (ret == ETIMEDOUT) {
             pthread_mutex_unlock(&mutex);
-            syslog(LOG_ERR, "Timeout waiting for buffer initialization");
+            tlog(LOG_ERR, "Timeout waiting for buffer initialization");
             return EXIT_FAILURE;
         }
     }
@@ -209,7 +209,7 @@ static int waitForInitialization(void) {
     pthread_mutex_unlock(&mutex);
 
     if (status < 0) {
-        syslog(LOG_ERR, "Buffer initialization failed");
+        tlog(LOG_ERR, "Buffer initialization failed");
         return EXIT_FAILURE;
     }
 
@@ -221,7 +221,7 @@ int connectToRender() {
 
     conn_fd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (conn_fd < 0) {
-        syslog(LOG_ERR, "socket: %s", strerror(errno));
+        tlog(LOG_ERR, "socket: %s", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -231,9 +231,9 @@ int connectToRender() {
 
     int ret = connect(conn_fd, (const struct sockaddr *) &serverAddr, sizeof(serverAddr));
     if (ret < 0) {
-        syslog(LOG_INFO, "connect: %s, retry %d", strerror(errno), connect_retry + 1);
+        tlog(LOG_INFO, "connect: %s, retry %d", strerror(errno), connect_retry + 1);
         if (connect_retry >= MAX_RETRY_TIMES - 1) {
-            syslog(LOG_ERR, "connect: %s, failed after %d times", strerror(errno),
+            tlog(LOG_ERR, "connect: %s, failed after %d times", strerror(errno),
                    connect_retry + 1);
             close(conn_fd);
             exit(EXIT_FAILURE);
@@ -241,12 +241,12 @@ int connectToRender() {
         connect_retry++;
         sleep(5);
     } else {
-        syslog(LOG_INFO, "Render connection established");
+        tlog(LOG_INFO, "Render connection established");
 
         // Create epoll instance
         epfd = epoll_create1(0);
         if (epfd == -1) {
-            syslog(LOG_ERR, "epoll_create1 failed: %s", strerror(errno));
+            tlog(LOG_ERR, "epoll_create1 failed: %s", strerror(errno));
             close(conn_fd);
             return EXIT_FAILURE;
         }
@@ -255,7 +255,7 @@ int connectToRender() {
         ev.events = EPOLLIN;
         ev.data.fd = conn_fd;
         if (epoll_ctl(epfd, EPOLL_CTL_ADD, conn_fd, &ev) == -1) {
-            syslog(LOG_ERR, "epoll_ctl failed: %s", strerror(errno));
+            tlog(LOG_ERR, "epoll_ctl failed: %s", strerror(errno));
             close(conn_fd);
             close(epfd);
             return EXIT_FAILURE;
@@ -263,7 +263,7 @@ int connectToRender() {
 
         // Start event loop thread
         if (pthread_create(&event_thread_id, NULL, eventLoopThread, NULL) != 0) {
-            syslog(LOG_ERR, "Failed to create event loop thread");
+            tlog(LOG_ERR, "Failed to create event loop thread");
             close(conn_fd);
             close(epfd);
             return EXIT_FAILURE;
@@ -272,35 +272,35 @@ int connectToRender() {
         // Send MAGIC handshake to trigger initialization
         char hello[] = MAGIC;
         if (write(conn_fd, hello, sizeof(hello)) != sizeof(hello)) {
-            syslog(LOG_ERR, "Failed to send handshake");
+            tlog(LOG_ERR, "Failed to send handshake");
             close(conn_fd);
             close(epfd);
             return EXIT_FAILURE;
         }
-        syslog(LOG_INFO, "Handshake sent to server");
+        tlog(LOG_INFO, "Handshake sent to server");
 
         // Wait for initialization to complete
         if (waitForInitialization() != 0) {
-            syslog(LOG_ERR, "Resource initialization failed");
+            tlog(LOG_ERR, "Resource initialization failed");
             return EXIT_FAILURE;
         }
 
-        syslog(LOG_INFO, "All resources initialized successfully");
+        tlog(LOG_INFO, "All resources initialized successfully");
         fflush(NULL);  // Flush all output buffers
     }
 
-    syslog(LOG_INFO, "connectToRender() returning 0");
+    tlog(LOG_INFO, "connectToRender() returning 0");
     fflush(NULL);
     return 0;
 }
 
 void stopEventLoop(void) {
     if (!event_loop_running) {
-        syslog(LOG_WARNING, "Event loop is not running");
+        tlog(LOG_WARNING, "Event loop is not running");
         return;
     }
 
-    syslog(LOG_INFO, "Stopping event loop thread...");
+    tlog(LOG_INFO, "Stopping event loop thread...");
 
     // Signal the thread to exit
     event_loop_running = 0;
@@ -318,9 +318,9 @@ void stopEventLoop(void) {
         // Now try to join (will block until thread exits)
         int ret = pthread_join(event_thread_id, NULL);
         if (ret == 0) {
-            syslog(LOG_INFO, "Event loop thread stopped successfully");
+            tlog(LOG_INFO, "Event loop thread stopped successfully");
         } else {
-            syslog(LOG_ERR, "pthread_join failed: %s", strerror(ret));
+            tlog(LOG_ERR, "pthread_join failed: %s", strerror(ret));
         }
 
         event_thread_id = 0;
@@ -345,5 +345,5 @@ void stopEventLoop(void) {
     waylandDestroyBuffer();
     waylandDestroySharedServerState();
 
-    syslog(LOG_INFO, "Event loop stopped and resources cleaned up");
+    tlog(LOG_INFO, "Event loop stopped and resources cleaned up");
 }

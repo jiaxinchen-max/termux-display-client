@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include "include/wayland.h"
-#include "include/syslog.h"
+#include "include/tlog.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "include/stb_image.h"
@@ -15,12 +15,12 @@ static char path[256];
 static int frame_number = 0;
 
 static int animate(){
-    syslog(LOG_INFO,"Start rend a picture");
+    tlog(LOG_INFO,"Start rend a picture");
     int ret;
     void *shared_buffer;
     ret = LorieBuffer_lock(lorieBuffer,&shared_buffer);
     if (ret != 0) {
-        syslog(LOG_ERR, "Failed to AHardwareBuffer_lock");
+        tlog(LOG_ERR, "Failed to AHardwareBuffer_lock");
         return ret;
     }
     uint8_t *chs;
@@ -45,24 +45,24 @@ void timer_handler(int signum) {
 void int_handler(int signum) {
     (void)signum;
     keep_running = 0;
-    syslog(LOG_INFO, "Received Ctrl+C, exiting...\n");
+    tlog(LOG_INFO, "Received Ctrl+C, exiting...\n");
 }
 int main(int count,char** argv){
-    syslog(LOG_INFO, "========== MAIN START ==========");
+    tlog(LOG_INFO, "========== MAIN START ==========");
     fflush(NULL);
 
-    syslog(LOG_INFO, "Calling connectToRender...");
+    tlog(LOG_INFO, "Calling connectToRender...");
     fflush(NULL);
 
     int ret = connectToRender();
 
-    syslog(LOG_INFO, "========== connectToRender RETURNED: %d ==========", ret);
+    tlog(LOG_INFO, "========== connectToRender RETURNED: %d ==========", ret);
     fflush(NULL);
 
-    syslog(LOG_INFO,"Termux render initialization succeed");
+    tlog(LOG_INFO,"Termux render initialization succeed");
     fflush(NULL);
 
-    syslog(LOG_INFO, "Setting up signal handlers...");
+    tlog(LOG_INFO, "Setting up signal handlers...");
     struct sigaction sa_timer, sa_int;
     struct itimerval timer;
 
@@ -70,7 +70,7 @@ int main(int count,char** argv){
     sa_timer.sa_flags = SA_RESTART;
     sigemptyset(&sa_timer.sa_mask);
     if (sigaction(SIGALRM, &sa_timer, NULL) == -1) {
-        syslog(LOG_ERR, "sigaction timer");
+        tlog(LOG_ERR, "sigaction timer");
         return 1;
     }
 
@@ -78,7 +78,7 @@ int main(int count,char** argv){
     sa_int.sa_flags = 0;
     sigemptyset(&sa_int.sa_mask);
     if (sigaction(SIGINT, &sa_int, NULL) == -1) {
-        syslog(LOG_ERR,"sigaction int");
+        tlog(LOG_ERR,"sigaction int");
         return 1;
     }
 
@@ -88,7 +88,7 @@ int main(int count,char** argv){
     timer.it_interval.tv_usec = 100000;    // 100ms
 
     if (setitimer(ITIMER_REAL, &timer, NULL) == -1) {
-        syslog(LOG_ERR,"setitimer");
+        tlog(LOG_ERR,"setitimer");
         return 1;
     }
 

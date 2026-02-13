@@ -1,4 +1,4 @@
-#include "include/syslog.h"
+#include "include/tlog.h"
 #include <stdio.h>
 #include <stdarg.h>
 #include <time.h>
@@ -9,7 +9,7 @@ static const char* level_names[] = {
 };
 static int current_level = LOG_DEBUG;
 
-__LIBC_HIDDEN__ void syslog(int priority, const char *format, ...) {
+void tlog(int priority, const char *format, ...) {
     if (priority > current_level)
         return;
 
@@ -29,6 +29,6 @@ __LIBC_HIDDEN__ void syslog(int priority, const char *format, ...) {
     fprintf(stderr, "\n");
 }
 
-__LIBC_HIDDEN__ void syslog_set_level(int level) {
+void tlog_set_level(int level) {
     current_level = level;
 }

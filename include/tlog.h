@@ -7,6 +7,6 @@
 #define LOG_INFO    6
 #define LOG_DEBUG   7
 
-void syslog(int priority, const char *format, ...) ;
+void tlog(int priority, const char *format, ...) ;
 
-void syslog_set_level(int level);
+void tlog_set_level(int level);
