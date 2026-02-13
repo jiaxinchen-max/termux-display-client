@@ -154,7 +154,7 @@ static int callback() {
                             }
                             case EVENT_ADD_BUFFER: {
                                 waylandApplyBuffer();
-                                break;
+                                return EXIT_SUCCESS;
                             }
                         }
                     } else {
