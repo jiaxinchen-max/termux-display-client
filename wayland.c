@@ -43,7 +43,7 @@ bool waylandConnectionAlive(void) {
     return lorieBuffer;
 }
 
-static void OsVendorInit(void) {
+static void WaylandVendorInit(void) {
     pthread_mutexattr_t mutex_attr;
     pthread_condattr_t cond_attr;
 
@@ -64,7 +64,7 @@ static void waylandApplyBuffer() {
     const LorieBuffer_Desc *desc = LorieBuffer_description(lorieBuffer);
     syslog(LOG_INFO, "Receive shared buffer width %d stride %d height %d format %d type %d id %llu",
            desc->width, desc->stride, desc->height, desc->format, desc->type, desc->id);
-    OsVendorInit();
+//    WaylandVendorInit();
 
     // Signal initialization complete
     pthread_mutex_lock(&mutex);
