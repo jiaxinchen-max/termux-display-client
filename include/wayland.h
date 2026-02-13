@@ -95,7 +95,7 @@ typedef union {
         size_t name_size;
         char *name;
         uint8_t format;
-        uint8_t pixel_type;
+        uint8_t type;
     } screenSize;
     struct {
         uint8_t t;
