@@ -23,4 +23,5 @@ add_executable(termux-render-daemon main.c)
 target_link_libraries(termux-render-daemon
         ${CMAKE_PROJECT_NAME}
         )
+set_target_properties(termux-render-daemon PROPERTIES LINK_FLAGS "-Wl,--allow-shlib-undefined")
 install(TARGETS termux-render-daemon RUNTIME)
