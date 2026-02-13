@@ -62,7 +62,7 @@ static void waylandApplyBuffer() {
     const LorieBuffer_Desc *desc = LorieBuffer_description(lorieBuffer);
     syslog(LOG_INFO, "Receive shared buffer width %d stride %d height %d format %d type %d id %llu",
            desc->width, desc->stride, desc->height, desc->format, desc->type, desc->id);
-    OsVendorInit();
+//    OsVendorInit();
     pthread_mutex_lock(&mutex);
     pthread_cond_signal(&cond);
     pthread_mutex_unlock(&mutex);
