@@ -144,6 +144,7 @@ static int callback() {
                                     close(epfd);
                                     return EXIT_FAILURE;
                                 }
+                                break;
                             }
                             case EVENT_SHARED_SERVER_STATE: {
                                 waylandApplySharedServerState();
