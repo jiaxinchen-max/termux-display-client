@@ -96,7 +96,7 @@ static void waylandApplySharedServerState() {
     close(stateFd);
     lorieEvent e = {.type = EVENT_APPLY_BUFFER};
     write(conn_fd, &e, sizeof(e));
-    lorieEvent e2 = {.screenSize = { .t = EVENT_SCREEN_SIZE, .width = 1080, .height = 720, .framerate = 30, } };
+    lorieEvent e2 = {.screenSize = {.t = EVENT_SCREEN_SIZE, .width = 1080, .height = 720, .framerate = 30, .format=LORIEBUFFER_AHARDWAREBUFFER}};
     write(conn_fd, &e2, sizeof(e2));
 }
 
