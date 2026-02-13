@@ -48,8 +48,21 @@ void int_handler(int signum) {
     syslog(LOG_INFO, "Received Ctrl+C, exiting...\n");
 }
 int main(int count,char** argv){
-    connectToRender();
+    syslog(LOG_INFO, "========== MAIN START ==========");
+    fflush(NULL);
+
+    syslog(LOG_INFO, "Calling connectToRender...");
+    fflush(NULL);
+
+    int ret = connectToRender();
+
+    syslog(LOG_INFO, "========== connectToRender RETURNED: %d ==========", ret);
+    fflush(NULL);
+
     syslog(LOG_INFO,"Termux render initialization succeed");
+    fflush(NULL);
+
+    syslog(LOG_INFO, "Setting up signal handlers...");
     struct sigaction sa_timer, sa_int;
     struct itimerval timer;
 

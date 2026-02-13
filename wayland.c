@@ -286,8 +286,11 @@ int connectToRender() {
         }
 
         syslog(LOG_INFO, "All resources initialized successfully");
+        fflush(NULL);  // Flush all output buffers
     }
 
+    syslog(LOG_INFO, "connectToRender() returning 0");
+    fflush(NULL);
     return 0;
 }
 
