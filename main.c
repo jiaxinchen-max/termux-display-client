@@ -11,6 +11,7 @@
 
 volatile sig_atomic_t keep_running = 1;
 extern LorieBuffer* lorieBuffer;
+extern struct lorie_shared_server_state *serverState;
 static char path[256];
 static int frame_number = 0;
 
@@ -18,6 +19,7 @@ static int animate(){
     tlog(LOG_INFO,"Start rend a picture");
     int ret;
     void *shared_buffer;
+    lorie_mutex_lock(&serverState->lock, &serverState->lockingPid);
     ret = LorieBuffer_lock(lorieBuffer,&shared_buffer);
     if (ret != 0) {
         tlog(LOG_ERR, "Failed to AHardwareBuffer_lock");
@@ -33,6 +35,7 @@ static int animate(){
     }
     // assuming format was set to 4 bytes per pixel and not 565 mode
     memcpy(shared_buffer, chs, width * height * sizeof(uint32_t));
+    lorie_mutex_unlock(&serverState->lock, &serverState->lockingPid);
     ret = LorieBuffer_unlock(lorieBuffer);
     stbi_image_free(chs);
     return ret;
