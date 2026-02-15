@@ -26,7 +26,6 @@ static pthread_t event_thread_id = 0;  // Event loop thread handle
 
 #define MAX_RETRY_TIMES 5
 
-#define SIGTERM_MSG "\nKILL | SIGTERM received."
 #define SOCKET_PATH "/data/data/com.termux/files/home/.wayland/unix_socket"
 
 LorieBuffer *lorieBuffer;
@@ -65,6 +64,8 @@ static void waylandApplyBuffer() {
     tlog(LOG_INFO, "Receive shared buffer width %d stride %d height %d format %d type %d id %llu",
            desc->width, desc->stride, desc->height, desc->format, desc->type, desc->id);
     WaylandVendorInit();
+    lorieEvent e = {.type = EVENT_CLIENT_VERIFY_SUCCEED};
+    write(conn_fd, &e, sizeof(e));
 
     // Signal initialization complete
     pthread_mutex_lock(&mutex);
@@ -132,7 +133,7 @@ static void *eventLoopThread(void *arg) {
                     lorieEvent e = {0};
                     if (read(conn_fd, &e, sizeof(e)) == sizeof(e)) {
                         switch (e.type) {
-                            case EVENT_VERIFY_SUCCEED: {
+                            case EVENT_SERVER_VERIFY_SUCCEED: {
                                 tlog(LOG_INFO, "Verification succeeded");
                                 lorieEvent req = {.type = EVENT_APPLY_SERVER_STATE};
                                 if (write(conn_fd, &req, sizeof(req)) != sizeof(req)) {
