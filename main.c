@@ -86,9 +86,9 @@ int main(int count,char** argv){
     }
 
     timer.it_value.tv_sec = 0;
-    timer.it_value.tv_usec = 100000;       // 100ms
+    timer.it_value.tv_usec = 1000000;       // 100ms
     timer.it_interval.tv_sec = 0;
-    timer.it_interval.tv_usec = 100000;    // 100ms
+    timer.it_interval.tv_usec = 1000000;    // 100ms
 
     if (setitimer(ITIMER_REAL, &timer, NULL) == -1) {
         tlog(LOG_ERR,"setitimer");
