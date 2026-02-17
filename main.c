@@ -35,7 +35,10 @@ static int animate(){
     }
     // assuming format was set to 4 bytes per pixel and not 565 mode
     memcpy(shared_buffer, chs, width * height * sizeof(uint32_t));
+    serverState->waitForNextFrame = false;
+    serverState->drawRequested = 1;
     lorie_mutex_unlock(&serverState->lock, &serverState->lockingPid);
+    pthread_cond_signal(&serverState->cond);
     ret = LorieBuffer_unlock(lorieBuffer);
     stbi_image_free(chs);
     tlog(LOG_INFO,"End rend a picture");
