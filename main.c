@@ -38,6 +38,7 @@ static int animate(){
     lorie_mutex_unlock(&serverState->lock, &serverState->lockingPid);
     ret = LorieBuffer_unlock(lorieBuffer);
     stbi_image_free(chs);
+    tlog(LOG_INFO,"End rend a picture");
     return ret;
 }
 
