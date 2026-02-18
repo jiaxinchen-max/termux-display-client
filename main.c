@@ -33,8 +33,26 @@ static int animate(){
         chs = stbi_load(path, &width, &height, &channel, STBI_rgb_alpha);
         frame_number++;
     }
-    // assuming format was set to 4 bytes per pixel and not 565 mode
-    memcpy(shared_buffer, chs, width * height * sizeof(uint32_t));
+
+    // Get buffer dimensions and stride
+    const LorieBuffer_Desc *desc = LorieBuffer_description(lorieBuffer);
+    int bufferWidth = desc->width;
+    int bufferHeight = desc->height;
+    int stride = desc->stride;  // Actual bytes per row
+
+    tlog(LOG_INFO, "Image: %dx%d, Buffer: %dx%d, stride: %d",
+         width, height, bufferWidth, bufferHeight, stride);
+
+    // Copy line by line to handle stride
+    uint8_t *dest = (uint8_t *)shared_buffer;
+    uint8_t *src = chs;
+    int copyWidth = (width < bufferWidth) ? width : bufferWidth;
+    int copyHeight = (height < bufferHeight) ? height : bufferHeight;
+    int srcRowBytes = width * 4;  // RGBA = 4 bytes per pixel
+
+    for (int y = 0; y < copyHeight; y++) {
+        memcpy(dest + y * stride, src + y * srcRowBytes, copyWidth * 4);
+    }
     serverState->waitForNextFrame = false;
     serverState->drawRequested = 1;
     pthread_cond_signal(&serverState->cond);
