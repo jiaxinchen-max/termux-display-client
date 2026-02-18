@@ -87,6 +87,7 @@ typedef enum {
     EVENT_DESTROY_BUFFER,
     EVENT_SERVER_VERIFY_SUCCEED,
     EVENT_CLIENT_VERIFY_SUCCEED,
+    EVENT_STOP_RENDER,
 } eventType;
 
 typedef union {
