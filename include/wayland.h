@@ -14,7 +14,7 @@
 #include <string.h>
 #include "linux/input-event-codes.h"
 #include "buffer.h"
-#include "wayland.h"
+#include "tlog.h"
 
 #define PORT 7892
 #define MAGIC "0xDEADBEEF"
@@ -40,6 +40,7 @@ static inline __always_inline void lorie_mutex_lock(pthread_mutex_t* mutex, pid_
 
         int ret = pthread_mutex_timedlock(mutex, &ts);
         if (ret == ETIMEDOUT) {
+            tlog(LOG_DEBUG,"lorie_mutex_lock timeout");
             if (*lockingPid == getpid() || waylandConnectionAlive())
                 continue;
 
