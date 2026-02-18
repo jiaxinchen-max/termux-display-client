@@ -343,3 +343,6 @@ static int android_to_linux_keycode[304] = {
         [ 210  /* ANDROID_KEYCODE_CALCULATOR */] = KEY_CALC,
 };
 int connectToRender();
+int connectToRender(void);
+void setExitCallback(void (*callback)(void));
+void stopEventLoop(void);

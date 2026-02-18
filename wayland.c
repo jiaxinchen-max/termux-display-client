@@ -298,6 +298,9 @@ void stopEventLoop(void) {
         event_thread_id = 0;
     }
 
+    waylandDestroyBuffer();
+    waylandDestroySharedServerState();
+
     if (conn_fd != -1) {
         close(conn_fd);
         conn_fd = -1;
@@ -310,7 +313,4 @@ void stopEventLoop(void) {
     pthread_mutex_lock(&mutex);
     buffer_ready = 0;
     pthread_mutex_unlock(&mutex);
-
-    waylandDestroyBuffer();
-    waylandDestroySharedServerState();
 }
