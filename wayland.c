@@ -42,28 +42,11 @@ bool waylandConnectionAlive(void) {
     return lorieBuffer;
 }
 
-static void WaylandVendorInit(void) {
-    pthread_mutexattr_t mutex_attr;
-    pthread_condattr_t cond_attr;
-
-
-    pthread_mutexattr_init(&mutex_attr);
-    pthread_mutexattr_setpshared(&mutex_attr, PTHREAD_PROCESS_SHARED);
-    pthread_mutexattr_settype(&mutex_attr, PTHREAD_MUTEX_RECURSIVE);
-    pthread_mutex_init(&serverState->lock, &mutex_attr);
-    pthread_mutex_init(&serverState->cursor.lock, &mutex_attr);
-
-    pthread_condattr_init(&cond_attr);
-    pthread_condattr_setpshared(&cond_attr, PTHREAD_PROCESS_SHARED);
-    pthread_cond_init(&serverState->cond, &cond_attr);
-}
-
 static void waylandApplyBuffer() {
     LorieBuffer_recvHandleFromUnixSocket(conn_fd, &lorieBuffer);
     const LorieBuffer_Desc *desc = LorieBuffer_description(lorieBuffer);
     tlog(LOG_INFO, "Receive shared buffer width %d stride %d height %d format %d type %d id %llu",
            desc->width, desc->stride, desc->height, desc->format, desc->type, desc->id);
-    WaylandVendorInit();
     lorieEvent e = {.type = EVENT_CLIENT_VERIFY_SUCCEED};
     write(conn_fd, &e, sizeof(e));
 
