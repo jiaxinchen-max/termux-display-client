@@ -37,8 +37,8 @@ static int animate(){
     memcpy(shared_buffer, chs, width * height * sizeof(uint32_t));
     serverState->waitForNextFrame = false;
     serverState->drawRequested = 1;
-    lorie_mutex_unlock(&serverState->lock, &serverState->lockingPid);
     pthread_cond_signal(&serverState->cond);
+    lorie_mutex_unlock(&serverState->lock, &serverState->lockingPid);
     ret = LorieBuffer_unlock(lorieBuffer);
     stbi_image_free(chs);
     tlog(LOG_INFO,"End rend a picture");
