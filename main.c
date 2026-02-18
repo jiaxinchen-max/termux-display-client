@@ -140,19 +140,58 @@ void exit_handler(void) {
 
 int main(int count,char** argv){
     int fps = 10;
-    if (count > 1) {
-        fps = atoi(argv[1]);
-        if (fps <= 0 || fps > 240) {
-            tlog(LOG_ERR, "Invalid fps value: %d. Using default 30 fps", fps);
-            fps = 30;
+    int width = 1080;
+    int height = 720;
+
+    for (int i = 1; i < count; i++) {
+        char *arg = argv[i];
+        char *value = NULL;
+        char key[64] = {0};
+
+        if (strncmp(arg, "--", 2) != 0) {
+            continue;
+        }
+
+        char *eq = strchr(arg, '=');
+        if (eq) {
+            int key_len = eq - arg;
+            if (key_len < 64) {
+                strncpy(key, arg, key_len);
+                value = eq + 1;
+            }
+        } else if (i + 1 < count) {
+            strncpy(key, arg, 63);
+            value = argv[++i];
+        }
+
+        if (!value) continue;
+
+        if (strcmp(key, "--fps") == 0) {
+            fps = atoi(value);
+            if (fps <= 0 || fps > 60) {
+                tlog(LOG_ERR, "Invalid fps: %d (range: 1-60). Using default 10", fps);
+                fps = 10;
+            }
+        } else if (strcmp(key, "--folder") == 0) {
+            animation_folder = value;
+        } else if (strcmp(key, "--width") == 0) {
+            width = atoi(value);
+            if (width <= 0) {
+                tlog(LOG_ERR, "Invalid width: %d. Using default 1080", width);
+                width = 1080;
+            }
+        } else if (strcmp(key, "--height") == 0) {
+            height = atoi(value);
+            if (height <= 0) {
+                tlog(LOG_ERR, "Invalid height: %d. Using default 720", height);
+                height = 720;
+            }
         }
     }
 
-    if (count > 2) {
-        animation_folder = argv[2];
-    }
-
     int interval_usec = 1000000 / fps;
+
+    setScreenConfig(width, height, fps);
 
     if (connectToRender() != 0) {
         return 1;

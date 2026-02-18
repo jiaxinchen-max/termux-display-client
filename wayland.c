@@ -25,6 +25,12 @@ static volatile int event_loop_running = 0;
 static pthread_t event_thread_id = 0;
 static void (*onExitCallback)(void) = NULL;
 
+static int screen_width = 1080;
+static int screen_height = 720;
+static int screen_framerate = 10;
+static int screen_format = AHARDWAREBUFFER_FORMAT_R8G8B8X8_UNORM;
+static int screen_type = LORIEBUFFER_AHARDWAREBUFFER;
+
 #define MAX_RETRY_TIMES 5
 
 #define SOCKET_PATH "/data/data/com.termux/files/home/.wayland/unix_socket"
@@ -47,6 +53,12 @@ void setExitCallback(void (*callback)(void)) {
     onExitCallback = callback;
 }
 
+void setScreenConfig(int width, int height, int framerate) {
+    if (width > 0) screen_width = width;
+    if (height > 0) screen_height = height;
+    if (framerate > 0) screen_framerate = framerate;
+}
+
 static void waylandApplyBuffer() {
     LorieBuffer_recvHandleFromUnixSocket(conn_fd, &lorieBuffer);
     lorieEvent e = {.type = EVENT_CLIENT_VERIFY_SUCCEED};
@@ -59,13 +71,8 @@ static void waylandApplyBuffer() {
 }
 
 static void waylandDestroyBuffer() {
-    unsigned long id;
-    if (!lorieBuffer)
-        return;
-    id = LorieBuffer_description(lorieBuffer)->id;
-    if (conn_fd != -1) {
-        lorieEvent e = {.removeBuffer = {.t = EVENT_DESTROY_BUFFER, .id = id}};
-        write(conn_fd, &e, sizeof(e));
+    if (lorieBuffer) {
+        lorieBuffer = NULL;
     }
 }
 
@@ -86,14 +93,14 @@ static void waylandApplySharedServerState() {
     close(stateFd);
     lorieEvent e = {.type = EVENT_APPLY_BUFFER};
     write(conn_fd, &e, sizeof(e));
-    lorieEvent e2 = {.screenSize = {.t = EVENT_SCREEN_SIZE, .width = 1080, .height = 720, .framerate = 30, .format=AHARDWAREBUFFER_FORMAT_R8G8B8X8_UNORM, .type=LORIEBUFFER_AHARDWAREBUFFER}};
+    lorieEvent e2 = {.screenSize = {.t = EVENT_SCREEN_SIZE, .width = screen_width, .height = screen_height, .framerate = screen_framerate, .format = screen_format, .type = screen_type}};
     write(conn_fd, &e2, sizeof(e2));
 }
 
 static void waylandDestroySharedServerState() {
-    if (conn_fd != -1) {
-        lorieEvent e = {.type = EVENT_DESTROY_SERVER_STATE};
-        write(conn_fd, &e, sizeof(e));
+    if (serverState) {
+        munmap(serverState, sizeof(*serverState));
+        serverState = NULL;
     }
 }
 
@@ -296,6 +303,11 @@ void stopEventLoop(void) {
         }
 
         event_thread_id = 0;
+    }
+
+    if (conn_fd != -1) {
+        lorieEvent e = {.type = EVENT_STOP_RENDER};
+        write(conn_fd, &e, sizeof(e));
     }
 
     waylandDestroyBuffer();
