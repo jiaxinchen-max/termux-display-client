@@ -91,6 +91,7 @@ static void waylandApplySharedServerState() {
         exit(EXIT_FAILURE);
     }
     close(stateFd);
+    serverState->lockingPid=getpid();
     lorieEvent e = {.type = EVENT_APPLY_BUFFER};
     write(conn_fd, &e, sizeof(e));
     lorieEvent e2 = {.screenSize = {.t = EVENT_SCREEN_SIZE, .width = screen_width, .height = screen_height, .framerate = screen_framerate, .format = screen_format, .type = screen_type}};
