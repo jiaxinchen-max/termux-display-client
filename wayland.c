@@ -23,6 +23,7 @@ static pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 static volatile int buffer_ready = 0;
 static volatile int event_loop_running = 0;
 static pthread_t event_thread_id = 0;
+
 static void (*onExitCallback)(void) = NULL;
 
 static int screen_width = 1080;
@@ -61,13 +62,11 @@ void setScreenConfig(int width, int height, int framerate) {
 
 static void waylandApplyBuffer() {
     LorieBuffer_recvHandleFromUnixSocket(conn_fd, &lorieBuffer);
-    lorieEvent e = {.type = EVENT_CLIENT_VERIFY_SUCCEED};
-    write(conn_fd, &e, sizeof(e));
-
-    pthread_mutex_lock(&mutex);
-    buffer_ready = 1;
-    pthread_cond_signal(&cond);
-    pthread_mutex_unlock(&mutex);
+    lorieEvent e = {.type = EVENT_APPLY_SERVER_STATE};
+    if (write(conn_fd, &e, sizeof(e)) != sizeof(e)) {
+        tlog(LOG_ERR, "Failed to send APPLY_SERVER_STATE");
+    }
+    exit(EXIT_FAILURE);
 }
 
 static void waylandDestroyBuffer() {
@@ -91,11 +90,13 @@ static void waylandApplySharedServerState() {
         exit(EXIT_FAILURE);
     }
     close(stateFd);
-    serverState->lockingPid=getpid();
-    lorieEvent e = {.type = EVENT_APPLY_BUFFER};
+    lorieEvent e = {.type = EVENT_CLIENT_VERIFY_SUCCEED};
     write(conn_fd, &e, sizeof(e));
-    lorieEvent e2 = {.screenSize = {.t = EVENT_SCREEN_SIZE, .width = screen_width, .height = screen_height, .framerate = screen_framerate, .format = screen_format, .type = screen_type}};
-    write(conn_fd, &e2, sizeof(e2));
+
+    pthread_mutex_lock(&mutex);
+    buffer_ready = 1;
+    pthread_cond_signal(&cond);
+    pthread_mutex_unlock(&mutex);
 }
 
 static void waylandDestroySharedServerState() {
@@ -125,9 +126,15 @@ static void *eventLoopThread(void *arg) {
                     if (read(conn_fd, &e, sizeof(e)) == sizeof(e)) {
                         switch (e.type) {
                             case EVENT_SERVER_VERIFY_SUCCEED: {
-                                lorieEvent req = {.type = EVENT_APPLY_SERVER_STATE};
-                                if (write(conn_fd, &req, sizeof(req)) != sizeof(req)) {
-                                    tlog(LOG_ERR, "Failed to send APPLY_SERVER_STATE");
+                                lorieEvent e1 = {.type = EVENT_APPLY_BUFFER};
+                                if (write(conn_fd, &e1, sizeof(e1)) != sizeof(e1)) {
+                                    tlog(LOG_ERR, "Failed to send APPLY_BUFFER");
+                                    goto cleanup;
+                                }
+                                lorieEvent e2 = {.screenSize = {.t = EVENT_SCREEN_SIZE, .width = screen_width, .height = screen_height, .framerate = screen_framerate, .format = screen_format, .type = screen_type}};
+                                if (write(conn_fd, &e2, sizeof(e2))!=sizeof (e2))
+                                {
+                                    tlog(LOG_ERR, "Failed to send BUFFER PROPERTIES");
                                     goto cleanup;
                                 }
                                 break;
@@ -237,7 +244,8 @@ int connectToRender() {
     int ret = connect(conn_fd, (const struct sockaddr *) &serverAddr, sizeof(serverAddr));
     if (ret < 0) {
         if (connect_retry >= MAX_RETRY_TIMES - 1) {
-            tlog(LOG_ERR, "connect failed after %d attempts: %s", connect_retry + 1, strerror(errno));
+            tlog(LOG_ERR, "connect failed after %d attempts: %s", connect_retry + 1,
+                 strerror(errno));
             close(conn_fd);
             exit(EXIT_FAILURE);
         }
