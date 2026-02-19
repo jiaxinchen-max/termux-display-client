@@ -127,7 +127,7 @@ static void *eventLoopThread(void *arg) {
     event_loop_running = 1;
 
     while (event_loop_running) {
-        int nfds = epoll_wait(epfd, events, 5, -1);
+        int nfds = epoll_wait(epfd, events, 5, 1000);
         if (nfds == -1) {
             if (errno == EINTR) continue;
             tlog(LOG_ERR, "epoll_wait error: %s", strerror(errno));
@@ -350,10 +350,10 @@ void stopEventLoop(void) {
         close(epfd);
         epfd = -1;
     }
-//    if (conn_fd!=-1){
-//        close(conn_fd);
-//        conn_fd=-1;
-//    }
+    if (conn_fd!=-1){
+        close(conn_fd);
+        conn_fd=-1;
+    }
 
     pthread_mutex_lock(&mutex);
     buffer_ready = 0;
