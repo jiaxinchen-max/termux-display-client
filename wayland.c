@@ -15,7 +15,7 @@
 #include "include/wayland.h"
 #include "include/tlog.h"
 
-static int conn_fd = -1, epfd = -1, stateFd = -1;
+static int event_fd = -1, conn_fd=-1, epfd = -1, stateFd = -1;
 static struct epoll_event ev, events[5];
 static int connect_retry = 0;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -61,9 +61,9 @@ void setScreenConfig(int width, int height, int framerate) {
 }
 
 static void waylandApplyBuffer() {
-    LorieBuffer_recvHandleFromUnixSocket(conn_fd, &lorieBuffer);
+    LorieBuffer_recvHandleFromUnixSocket(event_fd, &lorieBuffer);
     lorieEvent e = {.type = EVENT_APPLY_SERVER_STATE};
-    if (write(conn_fd, &e, sizeof(e)) != sizeof(e)) {
+    if (write(event_fd, &e, sizeof(e)) != sizeof(e)) {
         tlog(LOG_ERR, "Failed to send APPLY_SERVER_STATE");
         exit(EXIT_FAILURE);
     }
@@ -76,7 +76,7 @@ static void waylandDestroyBuffer() {
 }
 
 static void waylandApplySharedServerState() {
-    stateFd = ancil_recv_fd(conn_fd);
+    stateFd = ancil_recv_fd(event_fd);
 
     if (stateFd < 0) {
         tlog(LOG_ERR, "Failed to parse server state: %s", strerror(errno));
@@ -90,16 +90,11 @@ static void waylandApplySharedServerState() {
         exit(EXIT_FAILURE);
     }
     close(stateFd);
-    serverState->lockingPid = getpid();
-    lorieEvent e = {.type = EVENT_CLIENT_VERIFY_SUCCEED};
-    write(conn_fd, &e, sizeof(e));
-    lorieEvent e2 = {.client = {.pid=getpid()}};
-    write(conn_fd, &e2, sizeof(e2));
-
-    pthread_mutex_lock(&mutex);
-    buffer_ready = 1;
-    pthread_cond_signal(&cond);
-    pthread_mutex_unlock(&mutex);
+    lorieEvent e = {.type = EVENT_APPLY_EVENT_FD};
+    if (write(event_fd, &e, sizeof(e)) != sizeof(e)) {
+        tlog(LOG_ERR, "Failed to send APPLY_EVENT_FD");
+        exit(EXIT_FAILURE);
+    }
 }
 
 static void waylandDestroySharedServerState() {
@@ -109,11 +104,30 @@ static void waylandDestroySharedServerState() {
     }
 }
 
+static void waylandApplyEventFD(){
+    conn_fd = ancil_recv_fd(event_fd);
+
+    if (conn_fd < 0) {
+        tlog(LOG_ERR, "Failed to parse server state: %s", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+    serverState->lockingPid = getpid();
+    lorieEvent e = {.type = EVENT_CLIENT_VERIFY_SUCCEED};
+    write(event_fd, &e, sizeof(e));
+    lorieEvent e2 = {.client = {.pid=getpid()}};
+    write(event_fd, &e2, sizeof(e2));
+
+    pthread_mutex_lock(&mutex);
+    buffer_ready = 1;
+    pthread_cond_signal(&cond);
+    pthread_mutex_unlock(&mutex);
+}
+
 static void *eventLoopThread(void *arg) {
     event_loop_running = 1;
 
     while (event_loop_running) {
-        int nfds = epoll_wait(epfd, events, 5, 1000);
+        int nfds = epoll_wait(epfd, events, 5, -1);
         if (nfds == -1) {
             if (errno == EINTR) continue;
             tlog(LOG_ERR, "epoll_wait error: %s", strerror(errno));
@@ -123,19 +137,19 @@ static void *eventLoopThread(void *arg) {
         if (nfds == 0) continue;
 
         for (int i = 0; i < nfds; ++i) {
-            if (events[i].data.fd == conn_fd) {
+            if (events[i].data.fd == event_fd) {
                 if (events[i].events & EPOLLIN) {
                     lorieEvent e = {0};
-                    if (read(conn_fd, &e, sizeof(e)) == sizeof(e)) {
+                    if (read(event_fd, &e, sizeof(e)) == sizeof(e)) {
                         switch (e.type) {
                             case EVENT_SERVER_VERIFY_SUCCEED: {
                                 lorieEvent e1 = {.type = EVENT_APPLY_BUFFER};
-                                if (write(conn_fd, &e1, sizeof(e1)) != sizeof(e1)) {
+                                if (write(event_fd, &e1, sizeof(e1)) != sizeof(e1)) {
                                     tlog(LOG_ERR, "Failed to send APPLY_BUFFER");
                                     goto cleanup;
                                 }
                                 lorieEvent e2 = {.screenSize = {.t = EVENT_SCREEN_SIZE, .width = screen_width, .height = screen_height, .framerate = screen_framerate, .format = screen_format, .type = screen_type}};
-                                if (write(conn_fd, &e2, sizeof(e2)) != sizeof(e2)) {
+                                if (write(event_fd, &e2, sizeof(e2)) != sizeof(e2)) {
                                     tlog(LOG_ERR, "Failed to send BUFFER PROPERTIES");
                                     goto cleanup;
                                 }
@@ -149,6 +163,10 @@ static void *eventLoopThread(void *arg) {
                                 waylandApplyBuffer();
                                 break;
                             }
+                            case EVENT_SHARED_EVENT_FD:{
+                                waylandApplyEventFD();
+                                break;
+                            }
                             case EVENT_STOP_RENDER: {
                                 event_loop_running = 0;
                                 waylandDestroyBuffer();
@@ -157,9 +175,9 @@ static void *eventLoopThread(void *arg) {
                                     close(epfd);
                                     epfd = -1;
                                 }
-                                if (conn_fd != -1) {
-                                    close(conn_fd);
-                                    conn_fd = -1;
+                                if (event_fd != -1) {
+                                    close(event_fd);
+                                    event_fd = -1;
                                 }
                                 if (onExitCallback) {
                                     onExitCallback();
@@ -196,9 +214,9 @@ static void *eventLoopThread(void *arg) {
         close(epfd);
         epfd = -1;
     }
-    if (conn_fd != -1) {
-        close(conn_fd);
-        conn_fd = -1;
+    if (event_fd != -1) {
+        close(event_fd);
+        event_fd = -1;
     }
 
     event_loop_running = 0;
@@ -233,8 +251,8 @@ static int waitForInitialization(void) {
 int connectToRender() {
     struct sockaddr_un serverAddr;
 
-    conn_fd = socket(AF_UNIX, SOCK_STREAM, 0);
-    if (conn_fd < 0) {
+    event_fd = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (event_fd < 0) {
         tlog(LOG_ERR, "socket: %s", strerror(errno));
         exit(EXIT_FAILURE);
     }
@@ -243,12 +261,12 @@ int connectToRender() {
     serverAddr.sun_family = AF_UNIX;
     strncpy(serverAddr.sun_path, SOCKET_PATH, sizeof(serverAddr.sun_path) - 1);
 
-    int ret = connect(conn_fd, (const struct sockaddr *) &serverAddr, sizeof(serverAddr));
+    int ret = connect(event_fd, (const struct sockaddr *) &serverAddr, sizeof(serverAddr));
     if (ret < 0) {
         if (connect_retry >= MAX_RETRY_TIMES - 1) {
             tlog(LOG_ERR, "connect failed after %d attempts: %s", connect_retry + 1,
                  strerror(errno));
-            close(conn_fd);
+            close(event_fd);
             exit(EXIT_FAILURE);
         }
         connect_retry++;
@@ -257,30 +275,30 @@ int connectToRender() {
         epfd = epoll_create1(0);
         if (epfd == -1) {
             tlog(LOG_ERR, "epoll_create1 failed: %s", strerror(errno));
-            close(conn_fd);
+            close(event_fd);
             return EXIT_FAILURE;
         }
 
         ev.events = EPOLLIN;
-        ev.data.fd = conn_fd;
-        if (epoll_ctl(epfd, EPOLL_CTL_ADD, conn_fd, &ev) == -1) {
+        ev.data.fd = event_fd;
+        if (epoll_ctl(epfd, EPOLL_CTL_ADD, event_fd, &ev) == -1) {
             tlog(LOG_ERR, "epoll_ctl failed: %s", strerror(errno));
-            close(conn_fd);
+            close(event_fd);
             close(epfd);
             return EXIT_FAILURE;
         }
 
         if (pthread_create(&event_thread_id, NULL, eventLoopThread, NULL) != 0) {
             tlog(LOG_ERR, "Failed to create event loop thread");
-            close(conn_fd);
+            close(event_fd);
             close(epfd);
             return EXIT_FAILURE;
         }
 
         char hello[] = MAGIC;
-        if (write(conn_fd, hello, sizeof(hello)) != sizeof(hello)) {
+        if (write(event_fd, hello, sizeof(hello)) != sizeof(hello)) {
             tlog(LOG_ERR, "Failed to send handshake");
-            close(conn_fd);
+            close(event_fd);
             close(epfd);
             return EXIT_FAILURE;
         }
@@ -316,21 +334,25 @@ void stopEventLoop(void) {
         event_thread_id = 0;
     }
 
-    if (conn_fd != -1) {
+    if (event_fd != -1) {
         lorieEvent e = {.type = EVENT_STOP_RENDER};
-        write(conn_fd, &e, sizeof(e));
+        write(event_fd, &e, sizeof(e));
     }
 
     waylandDestroyBuffer();
     waylandDestroySharedServerState();
 
-    if (conn_fd != -1) {
-        close(conn_fd);
-        conn_fd = -1;
+    if (event_fd != -1) {
+        close(event_fd);
+        event_fd = -1;
     }
     if (epfd != -1) {
         close(epfd);
         epfd = -1;
+    }
+    if (conn_fd!=-1){
+        close(conn_fd);
+        conn_fd=-1;
     }
 
     pthread_mutex_lock(&mutex);
