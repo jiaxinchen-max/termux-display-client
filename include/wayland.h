@@ -141,6 +141,10 @@ typedef union {
         uint8_t t;
         uint32_t count;
     } clipboardSend;
+    struct {
+        uint8_t t;
+        uint32_t pid;
+    } client;
 } lorieEvent;
 
 struct lorie_shared_server_state {

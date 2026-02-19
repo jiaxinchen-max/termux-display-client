@@ -90,8 +90,11 @@ static void waylandApplySharedServerState() {
         exit(EXIT_FAILURE);
     }
     close(stateFd);
+    serverState->lockingPid = getpid();
     lorieEvent e = {.type = EVENT_CLIENT_VERIFY_SUCCEED};
     write(conn_fd, &e, sizeof(e));
+    lorieEvent e2 = {.client = {.pid=getpid()}};
+    write(conn_fd, &e2, sizeof(e2));
 
     pthread_mutex_lock(&mutex);
     buffer_ready = 1;
@@ -132,8 +135,7 @@ static void *eventLoopThread(void *arg) {
                                     goto cleanup;
                                 }
                                 lorieEvent e2 = {.screenSize = {.t = EVENT_SCREEN_SIZE, .width = screen_width, .height = screen_height, .framerate = screen_framerate, .format = screen_format, .type = screen_type}};
-                                if (write(conn_fd, &e2, sizeof(e2))!=sizeof (e2))
-                                {
+                                if (write(conn_fd, &e2, sizeof(e2)) != sizeof(e2)) {
                                     tlog(LOG_ERR, "Failed to send BUFFER PROPERTIES");
                                     goto cleanup;
                                 }
