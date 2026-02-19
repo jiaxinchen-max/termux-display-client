@@ -350,10 +350,10 @@ void stopEventLoop(void) {
         close(epfd);
         epfd = -1;
     }
-    if (conn_fd!=-1){
-        close(conn_fd);
-        conn_fd=-1;
-    }
+//    if (conn_fd!=-1){
+//        close(conn_fd);
+//        conn_fd=-1;
+//    }
 
     pthread_mutex_lock(&mutex);
     buffer_ready = 0;
