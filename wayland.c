@@ -114,8 +114,6 @@ static void waylandApplyEventFD(){
     serverState->lockingPid = getpid();
     lorieEvent e = {.type = EVENT_CLIENT_VERIFY_SUCCEED};
     write(event_fd, &e, sizeof(e));
-    lorieEvent e2 = {.client = {.pid=getpid()}};
-    write(event_fd, &e2, sizeof(e2));
 
     pthread_mutex_lock(&mutex);
     buffer_ready = 1;
