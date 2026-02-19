@@ -65,8 +65,8 @@ static void waylandApplyBuffer() {
     lorieEvent e = {.type = EVENT_APPLY_SERVER_STATE};
     if (write(conn_fd, &e, sizeof(e)) != sizeof(e)) {
         tlog(LOG_ERR, "Failed to send APPLY_SERVER_STATE");
+        exit(EXIT_FAILURE);
     }
-    exit(EXIT_FAILURE);
 }
 
 static void waylandDestroyBuffer() {
