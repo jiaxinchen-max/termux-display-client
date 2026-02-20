@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.22.1)
 
-project("termux-wayland")
+project("termux-render")
 
 add_library(${CMAKE_PROJECT_NAME} SHARED
         # List C/C++ source files with relative paths to this CMakeLists.txt.
         tlog.c
         buffer.c
-        wayland.c)
+        render.c)
 
 target_link_libraries(${CMAKE_PROJECT_NAME}
         # List libraries link to the target library
@@ -15,13 +15,13 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
 install(TARGETS ${CMAKE_PROJECT_NAME} LIBRARY)
 install(FILES
         ${CMAKE_SOURCE_DIR}/include/buffer.h
-        ${CMAKE_SOURCE_DIR}/include/wayland.h
+        ${CMAKE_SOURCE_DIR}/include/render.h
         DESTINATION include/termux/render
 )
 
-add_executable(termux-render-daemon main.c)
-target_link_libraries(termux-render-daemon
+add_executable(termux-render-sample main.c)
+target_link_libraries(termux-render-sample
         ${CMAKE_PROJECT_NAME}
         )
-set_target_properties(termux-render-daemon PROPERTIES LINK_FLAGS "-Wl,--allow-shlib-undefined")
-install(TARGETS termux-render-daemon RUNTIME)
+set_target_properties(termux-render-sample PROPERTIES LINK_FLAGS "-Wl,--allow-shlib-undefined")
+install(TARGETS termux-render-sample RUNTIME)

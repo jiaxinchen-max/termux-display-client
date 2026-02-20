@@ -12,7 +12,7 @@
 #include <sys/epoll.h>
 #include <sys/mman.h>
 #include "include/buffer.h"
-#include "include/wayland.h"
+#include "include/render.h"
 #include "include/tlog.h"
 
 static int event_fd = -1, conn_fd=-1, epfd = -1, stateFd = -1;

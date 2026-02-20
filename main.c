@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
-#include "include/wayland.h"
+#include "include/render.h"
 #include "include/tlog.h"
 
 #define STB_IMAGE_IMPLEMENTATION
