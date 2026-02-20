@@ -54,6 +54,10 @@ void setExitCallback(void (*callback)(void)) {
     onExitCallback = callback;
 }
 
+int get_conn_fd(void) {
+    return conn_fd;
+}
+
 void setScreenConfig(int width, int height, int framerate) {
     if (width > 0) screen_width = width;
     if (height > 0) screen_height = height;

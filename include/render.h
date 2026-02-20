@@ -346,3 +346,5 @@ void setScreenConfig(int, int, int);
 int connectToRender();
 void setExitCallback(void (*callback)(void));
 void stopEventLoop(void);
+/** Returns the fd for input events (mouse, touch, etc.), or -1 if not connected. */
+int get_conn_fd(void);
