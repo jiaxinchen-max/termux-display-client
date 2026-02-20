@@ -16,6 +16,7 @@ install(TARGETS ${CMAKE_PROJECT_NAME} LIBRARY)
 install(FILES
         ${CMAKE_SOURCE_DIR}/include/buffer.h
         ${CMAKE_SOURCE_DIR}/include/render.h
+        ${CMAKE_SOURCE_DIR}/include/tlog.h
         DESTINATION include/termux/render
 )
 
