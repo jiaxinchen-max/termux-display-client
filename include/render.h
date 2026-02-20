@@ -1,4 +1,5 @@
-#pragma once
+#ifndef RENDER_H
+#define RENDER_H
 
 #include <android/hardware_buffer.h>
 #include <android/native_window_jni.h>
@@ -348,3 +349,5 @@ void setExitCallback(void (*callback)(void));
 void stopEventLoop(void);
 /** Returns the fd for input events (mouse, touch, etc.), or -1 if not connected. */
 int get_conn_fd(void);
+
+#endif /* RENDER_H */

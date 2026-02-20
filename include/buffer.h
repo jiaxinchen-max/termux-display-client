@@ -1,4 +1,5 @@
-#pragma once
+#ifndef BUFFER_H
+#define BUFFER_H
 
 #include <fcntl.h>
 #include <linux/ashmem.h>
@@ -234,3 +235,5 @@ LorieBuffer *_Nullable LorieBufferList_findById(struct xorg_list *_Nullable list
 int ancil_send_fd(int sock, int fd);
 
 int ancil_recv_fd(int sock);
+
+#endif /* BUFFER_H */

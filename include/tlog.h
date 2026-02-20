@@ -1,3 +1,6 @@
+#ifndef TLOG_H
+#define TLOG_H
+
 #define LOG_EMERG   0
 #define LOG_ALERT   1
 #define LOG_CRIT    2
@@ -10,3 +13,5 @@
 void tlog(int priority, const char *format, ...) ;
 
 void tlog_set_level(int level);
+
+#endif /* TLOG_H */
