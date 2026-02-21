@@ -10,7 +10,7 @@ add_library(${CMAKE_PROJECT_NAME} SHARED
 
 target_link_libraries(${CMAKE_PROJECT_NAME}
         # List libraries link to the target library
-        android log m z EGL GLESv2
+        android log
 )
 install(TARGETS ${CMAKE_PROJECT_NAME} LIBRARY)
 install(FILES

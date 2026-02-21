@@ -3,8 +3,6 @@
 #pragma ide diagnostic ignored "ConstantParameter"
 #pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
 #pragma ide diagnostic ignored "OCUnusedMacroInspection"
-#define EGL_EGLEXT_PROTOTYPES
-#define GL_GLEXT_PROTOTYPES
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
@@ -194,34 +192,6 @@ __LIBC_HIDDEN__ LorieBuffer* LorieBuffer_wrapAHardwareBuffer(AHardwareBuffer* bu
     return allocate(0, 0, 0, 0, LORIEBUFFER_AHARDWAREBUFFER, buffer, -1, 0, 0, false);
 }
 
- void __LorieBuffer_free(LorieBuffer* buffer) {
-    if (!buffer)
-        return;
-
-    xorg_list_del(&buffer->link);
-
-    if (eglGetCurrentContext())
-        glDeleteTextures(1, &buffer->id);
-
-    if (eglGetCurrentDisplay() && buffer->image)
-        eglDestroyImageKHR(eglGetCurrentDisplay(), buffer->image);
-
-    switch (buffer->desc.type) {
-        case LORIEBUFFER_REGULAR:
-            free(buffer->desc.data);
-            break;
-        case LORIEBUFFER_FD:
-            munmap(buffer->desc.data, buffer->size);
-            close(buffer->fd);
-            break;
-        case LORIEBUFFER_AHARDWAREBUFFER:
-            AHardwareBuffer_release(buffer->desc.buffer);
-            break;
-        default: break;
-    }
-
-    free(buffer);
-}
 
 const LorieBuffer_Desc* LorieBuffer_description(LorieBuffer* buffer) {
     static const LorieBuffer_Desc none = {0};
