@@ -10,7 +10,7 @@ add_library(${CMAKE_PROJECT_NAME} SHARED
 
 target_link_libraries(${CMAKE_PROJECT_NAME}
         # List libraries link to the target library
-        android log
+        android log m
 )
 install(TARGETS ${CMAKE_PROJECT_NAME} LIBRARY)
 install(FILES
@@ -23,6 +23,6 @@ install(FILES
 add_executable(termux-render-sample main.c)
 target_link_libraries(termux-render-sample
         ${CMAKE_PROJECT_NAME}
-        )
+)
 set_target_properties(termux-render-sample PROPERTIES LINK_FLAGS "-Wl,--allow-shlib-undefined")
 install(TARGETS termux-render-sample RUNTIME)
