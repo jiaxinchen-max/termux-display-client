@@ -178,13 +178,13 @@ int main(int count,char** argv){
             width = atoi(value);
             if (width <= 0) {
                 tlog(LOG_ERR, "Invalid width: %d. Using default 1080", width);
-                width = 1080;
+                width = 800;
             }
         } else if (strcmp(key, "--height") == 0) {
             height = atoi(value);
             if (height <= 0) {
                 tlog(LOG_ERR, "Invalid height: %d. Using default 720", height);
-                height = 720;
+                height = 800;
             }
         }
     }

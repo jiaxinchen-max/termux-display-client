@@ -23,6 +23,6 @@ install(FILES
 add_executable(termux-render-sample main.c)
 target_link_libraries(termux-render-sample
         ${CMAKE_PROJECT_NAME}
-)
+        )
 set_target_properties(termux-render-sample PROPERTIES LINK_FLAGS "-Wl,--allow-shlib-undefined")
 install(TARGETS termux-render-sample RUNTIME)
