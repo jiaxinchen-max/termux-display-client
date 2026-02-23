@@ -34,7 +34,7 @@ static int screen_type = LORIEBUFFER_AHARDWAREBUFFER;
 
 #define MAX_RETRY_TIMES 5
 
-#define SOCKET_PATH "/data/data/com.termux/files/home/.wayland/unix_socket"
+#define SOCKET_PATH "/data/data/com.termux/files/usr/tmp/wayland-0"
 
 LorieBuffer *lorieBuffer;
 struct lorie_shared_server_state *serverState;
