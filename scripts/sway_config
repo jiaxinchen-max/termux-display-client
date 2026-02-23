@@ -1,0 +1,98 @@
+# Sway configuration for Termux
+# Force cursor visibility and software rendering
+seat * xcursor_theme default 24
+seat * cursor move 100 100
+seat * cursor set default
+
+# Ensure pointer capability  
+seat * pointer_accel 0
+seat * scroll_factor 1.0
+
+# Force hide hardware cursor (use software cursor)
+seat * hide_cursor when-typing disable
+
+# Output configuration
+output * {
+    background #336699 solid
+    mode 1024x768
+}
+
+# Force software cursor if needed
+exec_always pkill swaybg; swaybg -c "#336699" &
+
+# Input configuration
+input type:pointer {
+    accel_profile flat
+    pointer_accel 0
+}
+
+# Key bindings
+set $mod Mod4
+
+# Application launcher (custom launcher for Termux)
+bindsym $mod+d exec foot -e ~/app_launcher.sh || bash ~/app_launcher.sh
+
+# Terminal
+bindsym $mod+Return exec foot || x-terminal-emulator || $TERMINAL
+
+# Common applications
+bindsym $mod+f exec nnn || ranger || mc  # File manager
+bindsym $mod+b exec firefox || chromium || $BROWSER  # Browser
+bindsym $mod+e exec mousepad || nano || vim  # Text editor
+
+# Window management
+bindsym $mod+q kill
+bindsym $mod+Shift+e exit
+bindsym $mod+Shift+r reload
+
+# Window focus
+bindsym $mod+Left focus left
+bindsym $mod+Down focus down
+bindsym $mod+Up focus up
+bindsym $mod+Right focus right
+
+# Move windows
+bindsym $mod+Shift+Left move left
+bindsym $mod+Shift+Down move down
+bindsym $mod+Shift+Up move up
+bindsym $mod+Shift+Right move right
+
+# Workspaces
+bindsym $mod+1 workspace 1
+bindsym $mod+2 workspace 2
+bindsym $mod+3 workspace 3
+bindsym $mod+4 workspace 4
+bindsym $mod+5 workspace 5
+
+# Move to workspace
+bindsym $mod+Shift+1 move container to workspace 1
+bindsym $mod+Shift+2 move container to workspace 2
+bindsym $mod+Shift+3 move container to workspace 3
+bindsym $mod+Shift+4 move container to workspace 4
+bindsym $mod+Shift+5 move container to workspace 5
+
+# Floating windows
+bindsym $mod+Shift+space floating toggle
+bindsym $mod+space focus mode_toggle
+
+# Auto-start applications
+exec_always {
+    # Kill any existing background processes
+    pkill -f "termux-app-center" 2>/dev/null || true
+    pkill -f "dmenu" 2>/dev/null || true
+    
+    # Start application menu/launcher (if available)
+    # You might need to install these in Termux
+    # termux-app-center &
+}
+
+# Status bar (waybar alternative for simple status)
+bar {
+    position top
+    status_command while echo "$(date +'%Y-%m-%d %H:%M:%S') | Battery: $(termux-battery-status | grep percentage | cut -d: -f2 | tr -d ' ') | $(uname -n)"; do sleep 1; done
+    colors {
+        statusline #ffffff
+        background #323232
+        inactive_workspace #32323200 #32323200 #5c5c5c
+    }
+}
