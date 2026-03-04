@@ -26,6 +26,10 @@
 #ifndef _XORG_LIST_H_
 #define _XORG_LIST_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stddef.h> /* offsetof() */
 
 /**
@@ -491,5 +495,9 @@ xorg_list_is_empty(struct xorg_list *head)
 typedef struct generic_list_rec {
     void *next;
 } GenericListRec, *GenericListPtr, *glp;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

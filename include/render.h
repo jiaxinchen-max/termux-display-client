@@ -1,6 +1,10 @@
 #ifndef RENDER_H
 #define RENDER_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <android/hardware_buffer.h>
 #include <android/native_window_jni.h>
 #include <android/choreographer.h>
@@ -351,5 +355,9 @@ void stopEventLoop(void);
 int get_conn_fd(void);
 LorieBuffer *get_lorieBuffer(void);
 struct lorie_shared_server_state *get_serverState(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* RENDER_H */
