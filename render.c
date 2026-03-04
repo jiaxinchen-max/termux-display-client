@@ -54,7 +54,7 @@ void setExitCallback(void (*callback)(void)) {
     onExitCallback = callback;
 }
 
-int get_conn_fd() {
+int get_connFd() {
     return conn_fd;
 }
 

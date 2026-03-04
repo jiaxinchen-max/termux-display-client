@@ -352,7 +352,7 @@ int connectToRender();
 void setExitCallback(void (*callback)(void));
 void stopEventLoop();
 /** Returns the fd for input events (mouse, touch, etc.), or -1 if not connected. */
-int get_conn_fd();
+int get_connFd();
 LorieBuffer *get_lorieBuffer();
 struct lorie_shared_server_state *get_serverState();
 
