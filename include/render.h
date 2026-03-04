@@ -25,7 +25,7 @@ extern "C" {
 #define MAGIC "0xDEADBEEF"
 
 struct lorie_shared_server_state;
-bool waylandConnectionAlive(void);
+bool waylandConnectionAlive();
 static inline __always_inline void lorie_mutex_lock(pthread_mutex_t* mutex, pid_t* lockingPid) {
     // Unfortunately there is no robust mutexes in bionic.
     // Posix does not define any valid way to unlock stuck non-robust mutex
@@ -350,11 +350,11 @@ static int android_to_linux_keycode[304] = {
 void setScreenConfig(int, int, int);
 int connectToRender();
 void setExitCallback(void (*callback)(void));
-void stopEventLoop(void);
+void stopEventLoop();
 /** Returns the fd for input events (mouse, touch, etc.), or -1 if not connected. */
-int get_conn_fd(void);
-LorieBuffer *get_lorieBuffer(void);
-struct lorie_shared_server_state *get_serverState(void);
+int get_conn_fd();
+LorieBuffer *get_lorieBuffer();
+struct lorie_shared_server_state *get_serverState();
 
 #ifdef __cplusplus
 }

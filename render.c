@@ -46,7 +46,7 @@ Java_com_termux_wayland_NativeLib_stringFromJNI(
     return "hello";
 }
 
-bool waylandConnectionAlive(void) {
+bool waylandConnectionAlive() {
     return lorieBuffer;
 }
 
@@ -54,15 +54,15 @@ void setExitCallback(void (*callback)(void)) {
     onExitCallback = callback;
 }
 
-int get_conn_fd(void) {
+int get_conn_fd() {
     return conn_fd;
 }
 
-LorieBuffer *get_lorieBuffer(void) {
+LorieBuffer *get_lorieBuffer() {
     return lorieBuffer;
 }
 
-struct lorie_shared_server_state *get_serverState(void) {
+struct lorie_shared_server_state *get_serverState() {
     return serverState;
 }
 
@@ -233,7 +233,7 @@ static void *eventLoopThread(void *arg) {
     return NULL;
 }
 
-static int waitForInitialization(void) {
+static int waitForInitialization() {
     struct timespec timeout;
     clock_gettime(CLOCK_REALTIME, &timeout);
     timeout.tv_sec += 10;
@@ -322,7 +322,7 @@ int connectToRender() {
     return 0;
 }
 
-void stopEventLoop(void) {
+void stopEventLoop() {
     if (!event_loop_running) {
         return;
     }
