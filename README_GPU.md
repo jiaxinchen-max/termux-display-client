@@ -18,15 +18,17 @@ The GPU rendering system provides hardware-accelerated graphics using OpenGL ES 
 - Proper resource cleanup and error handling
 - Support for OpenGL ES 2.0 with configurable attributes
 
-### 3. AHardwareBuffer Integration
-- Direct rendering to AHardwareBuffer via EGLImage
-- Zero-copy texture binding for optimal performance
-- Automatic framebuffer setup and management
+### 3. Basic Rendering Support
+- OpenGL ES 2.0 context for hardware-accelerated rendering
+- Color clearing and basic viewport management
+- Foundation for more complex rendering operations
 
 ### 4. Performance Monitoring
-- Real-time frame timing statistics
-- Average FPS calculation
+- Basic performance statistics
 - Detailed EGL/OpenGL information reporting
+- Simple frame counting and timing
+
+**Note**: This is a simplified version focused on compilation compatibility. Advanced features like AHardwareBuffer integration via EGLImage are prepared but not fully implemented to ensure stable compilation across different Android environments.
 
 ## Files Structure
 
@@ -179,9 +181,13 @@ GPU rendering provides several advantages over CPU-based rendering:
 
 2. **Android extensions not available**
    - This is expected in some environments
-   - The system will still work with reduced functionality
+   - The simplified version will still work with basic OpenGL functionality
 
-3. **Performance issues**
+3. **Compilation errors**
+   - Ensure all required headers are available
+   - Check that EGL and GLES libraries are linked properly
+
+4. **Performance issues**
    - Use performance monitoring to identify bottlenecks
    - Reduce resolution or frame rate if needed
 

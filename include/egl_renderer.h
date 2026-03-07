@@ -19,6 +19,19 @@
 #include <dlfcn.h>
 #include <time.h>
 
+// Forward declare types that might not be available
+#ifndef EGL_NO_IMAGE_KHR
+#define EGL_NO_IMAGE_KHR ((EGLImageKHR)0)
+#endif
+
+#ifndef EGLImageKHR
+typedef void* EGLImageKHR;
+#endif
+
+#ifndef GLeglImageOES
+typedef void* GLeglImageOES;
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -39,6 +52,11 @@ typedef struct {
     // Dynamic loading of Android EGL extensions
     void *egl_android_lib;
     EGLClientBuffer (*eglGetNativeClientBufferANDROID)(const struct AHardwareBuffer *buffer);
+    
+    // EGL extension function pointers
+    EGLImageKHR (*eglCreateImageKHR)(EGLDisplay dpy, EGLContext ctx, EGLenum target, EGLClientBuffer buffer, const EGLint *attrib_list);
+    EGLBoolean (*eglDestroyImageKHR)(EGLDisplay dpy, EGLImageKHR image);
+    void (*glEGLImageTargetTexture2DOES)(GLenum target, GLeglImageOES image);
     
     // OpenGL objects
     GLuint framebuffer;

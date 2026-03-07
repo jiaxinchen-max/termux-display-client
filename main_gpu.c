@@ -1,8 +1,5 @@
 /*
- * GPU-accelerated rendering example for Termux Display Client
- * 
- * This example demonstrates how to use the EGL renderer for hardware-accelerated
- * graphics rendering instead of CPU-based memcpy operations.
+ * Simplified GPU-accelerated rendering example for Termux Display Client
  */
 
 #include <stdio.h>
@@ -25,37 +22,36 @@ extern struct lorie_shared_server_state *serverState;
 static EglRenderer renderer;
 static int frame_number = 0;
 static bool renderer_initialized = false;
-static int performance_report_interval = 100;  // Report every 100 frames
 
 // Simple animation parameters
 static float animation_time = 0.0f;
 static const float animation_speed = 2.0f;
 
 static int setup_gpu_renderer() {
-    LOGI("Setting up GPU renderer");
+    tlog(LOG_INFO, "Setting up GPU renderer");
     
     // Initialize EGL renderer
     if (!egl_renderer_init(&renderer)) {
-        LOGE("Failed to initialize EGL renderer");
+        tlog(LOG_ERR, "Failed to initialize EGL renderer");
         return -1;
     }
     
     // Check if Android extensions are available
     if (!egl_renderer_has_android_extensions(&renderer)) {
-        LOGW("Android EGL extensions not available - some features may be limited");
+        tlog(LOG_WARNING, "Android EGL extensions not available - some features may be limited");
     }
     
     // Print detailed renderer information
     egl_renderer_print_info(&renderer);
     
     renderer_initialized = true;
-    LOGI("GPU renderer setup complete");
+    tlog(LOG_INFO, "GPU renderer setup complete");
     return 0;
 }
 
 static void cleanup_gpu_renderer() {
     if (renderer_initialized) {
-        LOGI("Cleaning up GPU renderer");
+        tlog(LOG_INFO, "Cleaning up GPU renderer");
         egl_renderer_cleanup(&renderer);
         renderer_initialized = false;
     }
@@ -63,7 +59,7 @@ static void cleanup_gpu_renderer() {
 
 static int render_animated_frame() {
     if (!renderer_initialized) {
-        LOGE("Renderer not initialized");
+        tlog(LOG_ERR, "Renderer not initialized");
         return -1;
     }
     
@@ -77,9 +73,9 @@ static int render_animated_frame() {
     // Setup render target if not already done or if buffer changed
     static int last_width = 0, last_height = 0;
     if (last_width != bufferWidth || last_height != bufferHeight) {
-        LOGI("Setting up render target: %dx%d", bufferWidth, bufferHeight);
+        tlog(LOG_INFO, "Setting up render target: %dx%d", bufferWidth, bufferHeight);
         if (!egl_renderer_setup_target(&renderer, desc->buffer, bufferWidth, bufferHeight)) {
-            LOGE("Failed to setup render target");
+            tlog(LOG_ERR, "Failed to setup render target");
             lorie_mutex_unlock(&serverState->lock, &serverState->lockingPid);
             return -1;
         }
@@ -89,7 +85,7 @@ static int render_animated_frame() {
     
     // Begin frame rendering
     if (!egl_renderer_begin_frame(&renderer)) {
-        LOGE("Failed to begin frame");
+        tlog(LOG_ERR, "Failed to begin frame");
         lorie_mutex_unlock(&serverState->lock, &serverState->lockingPid);
         return -1;
     }
@@ -102,12 +98,9 @@ static int render_animated_frame() {
     // Clear the screen with animated color
     egl_renderer_clear(&renderer, r, g, b, 1.0f);
     
-    // TODO: Add more complex rendering here (textures, geometry, etc.)
-    // For now, we just demonstrate the color animation
-    
     // End frame rendering
     if (!egl_renderer_end_frame(&renderer)) {
-        LOGE("Failed to end frame");
+        tlog(LOG_ERR, "Failed to end frame");
         lorie_mutex_unlock(&serverState->lock, &serverState->lockingPid);
         return -1;
     }
@@ -124,11 +117,11 @@ static int render_animated_frame() {
     frame_number++;
     
     // Report performance statistics periodically
-    if (frame_number % performance_report_interval == 0) {
+    if (frame_number % 100 == 0) {
         double avg_frame_time, fps;
         unsigned long total_frames;
         egl_renderer_get_performance_stats(&renderer, &avg_frame_time, &fps, &total_frames);
-        LOGI("Performance: Frame %d, Avg: %.2f ms/frame, FPS: %.2f", 
+        tlog(LOG_INFO, "Performance: Frame %d, Avg: %.2f ms/frame, FPS: %.2f", 
              frame_number, avg_frame_time, fps);
     }
     
@@ -183,19 +176,19 @@ int main(int count, char** argv) {
         if (strcmp(key, "--fps") == 0) {
             fps = atoi(value);
             if (fps <= 0 || fps > 60) {
-                LOGE("Invalid fps: %d (range: 1-60). Using default 10", fps);
+                tlog(LOG_ERR, "Invalid fps: %d (range: 1-60). Using default 10", fps);
                 fps = 10;
             }
         } else if (strcmp(key, "--width") == 0) {
             width = atoi(value);
             if (width <= 0) {
-                LOGE("Invalid width: %d. Using default 1080", width);
+                tlog(LOG_ERR, "Invalid width: %d. Using default 1080", width);
                 width = 1080;
             }
         } else if (strcmp(key, "--height") == 0) {
             height = atoi(value);
             if (height <= 0) {
-                LOGE("Invalid height: %d. Using default 720", height);
+                tlog(LOG_ERR, "Invalid height: %d. Using default 720", height);
                 height = 720;
             }
         }
@@ -203,21 +196,21 @@ int main(int count, char** argv) {
     
     int interval_usec = 1000000 / fps;
     
-    LOGI("Starting GPU-accelerated rendering demo");
-    LOGI("Resolution: %dx%d, FPS: %d", width, height, fps);
+    tlog(LOG_INFO, "Starting GPU-accelerated rendering demo");
+    tlog(LOG_INFO, "Resolution: %dx%d, FPS: %d", width, height, fps);
     
     // Set screen configuration
     setScreenConfig(width, height, fps);
     
     // Connect to render service
     if (connectToRender() != 0) {
-        LOGE("Failed to connect to render service");
+        tlog(LOG_ERR, "Failed to connect to render service");
         return 1;
     }
     
     // Setup GPU renderer
     if (setup_gpu_renderer() != 0) {
-        LOGE("Failed to setup GPU renderer");
+        tlog(LOG_ERR, "Failed to setup GPU renderer");
         return 1;
     }
     
@@ -232,7 +225,7 @@ int main(int count, char** argv) {
     sa_timer.sa_flags = SA_RESTART;
     sigemptyset(&sa_timer.sa_mask);
     if (sigaction(SIGALRM, &sa_timer, NULL) == -1) {
-        LOGE("sigaction timer failed");
+        tlog(LOG_ERR, "sigaction timer failed");
         cleanup_gpu_renderer();
         return 1;
     }
@@ -241,7 +234,7 @@ int main(int count, char** argv) {
     sa_int.sa_flags = 0;
     sigemptyset(&sa_int.sa_mask);
     if (sigaction(SIGINT, &sa_int, NULL) == -1) {
-        LOGE("sigaction int failed");
+        tlog(LOG_ERR, "sigaction int failed");
         cleanup_gpu_renderer();
         return 1;
     }
@@ -253,19 +246,19 @@ int main(int count, char** argv) {
     timer.it_interval.tv_usec = interval_usec % 1000000;
     
     if (setitimer(ITIMER_REAL, &timer, NULL) == -1) {
-        LOGE("setitimer failed");
+        tlog(LOG_ERR, "setitimer failed");
         cleanup_gpu_renderer();
         return 1;
     }
     
-    LOGI("GPU renderer started successfully - press Ctrl+C to exit");
+    tlog(LOG_INFO, "GPU renderer started successfully - press Ctrl+C to exit");
     
     // Main loop
     while (keep_running) {
         pause();
     }
     
-    LOGI("Shutting down GPU renderer");
+    tlog(LOG_INFO, "Shutting down GPU renderer");
     cleanup_gpu_renderer();
     stopEventLoop();
     
