@@ -44,7 +44,7 @@ bool egl_renderer_init(EglRenderer *renderer)
         tlog(LOG_WARNING, "Failed to load Android EGL extensions - some features may not work");
     }
     
-    // Get EGL display
+    // Get EGL display for offscreen rendering (no window binding needed)
     renderer->display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
     if (renderer->display == EGL_NO_DISPLAY) {
         tlog(LOG_ERR, "eglGetDisplay failed");
@@ -306,7 +306,7 @@ static bool create_egl_context(EglRenderer *renderer)
         return false;
     }
     
-    // Create a pbuffer surface for makeCurrent
+    // Create a pbuffer surface for offscreen rendering (no window needed)
     const EGLint pbufferAttribs[] = {
         EGL_WIDTH, 1,
         EGL_HEIGHT, 1,
