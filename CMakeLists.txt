@@ -6,11 +6,12 @@ add_library(${CMAKE_PROJECT_NAME} SHARED
         # List C/C++ source files with relative paths to this CMakeLists.txt.
         tlog.c
         buffer.c
-        render.c)
+        render.c
+        egl_renderer.c)
 
 target_link_libraries(${CMAKE_PROJECT_NAME}
         # List libraries link to the target library
-        android log m
+        android log m EGL GLESv2
 )
 
 install(TARGETS ${CMAKE_PROJECT_NAME} LIBRARY)
@@ -18,6 +19,7 @@ install(FILES
         ${CMAKE_SOURCE_DIR}/include/buffer.h
         ${CMAKE_SOURCE_DIR}/include/render.h
         ${CMAKE_SOURCE_DIR}/include/tlog.h
+        ${CMAKE_SOURCE_DIR}/include/egl_renderer.h
         DESTINATION include/termux/render
 )
 
@@ -26,4 +28,11 @@ target_link_libraries(termux-render-sample
         ${CMAKE_PROJECT_NAME}
         )
 set_target_properties(termux-render-sample PROPERTIES LINK_FLAGS "-Wl,--allow-shlib-undefined")
-install(TARGETS termux-render-sample RUNTIME)
+
+add_executable(termux-render-gpu main_gpu.c)
+target_link_libraries(termux-render-gpu
+        ${CMAKE_PROJECT_NAME}
+        )
+set_target_properties(termux-render-gpu PROPERTIES LINK_FLAGS "-Wl,--allow-shlib-undefined")
+
+install(TARGETS termux-render-sample termux-render-gpu RUNTIME)
