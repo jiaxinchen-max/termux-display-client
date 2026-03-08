@@ -203,7 +203,7 @@ struct lorie_shared_server_state {
     } cursor;
 };
 
-static int android_to_linux_keycode[304] = {
+extern int android_to_linux_keycode[304];
         [ 4   /* ANDROID_KEYCODE_BACK */] = KEY_ESC,
         [ 7   /* ANDROID_KEYCODE_0 */] = KEY_0,
         [ 8   /* ANDROID_KEYCODE_1 */] = KEY_1,
