@@ -186,6 +186,23 @@ static int screen_type = LORIEBUFFER_AHARDWAREBUFFER;
 LorieBuffer *lorieBuffer;
 struct lorie_shared_server_state *serverState;
 
+static ssize_t read_full(int fd, void *buf, size_t len) {
+    size_t off = 0;
+    while (off < len) {
+        ssize_t n = read(fd, (char *)buf + off, len - off);
+        if (n == 0)
+            return (ssize_t)off;
+        if (n < 0) {
+            if (errno == EINTR)
+                continue;
+            return -1;
+        }
+        off += (size_t)n;
+    }
+    return (ssize_t)off;
+}
+
+
 JNIEXPORT jstring JNICALL
 Java_com_termux_wayland_NativeLib_stringFromJNI(
         JNIEnv *env,
@@ -297,7 +314,8 @@ static void *eventLoopThread(void *arg) {
             if (events[i].data.fd == event_fd) {
                 if (events[i].events & EPOLLIN) {
                     lorieEvent e = {0};
-                    if (read(event_fd, &e, sizeof(e)) == sizeof(e)) {
+                    ssize_t nread = read_full(event_fd, &e, sizeof(e));
+                    if (nread == (ssize_t)sizeof(e)) {
                         switch (e.type) {
                             case EVENT_SERVER_VERIFY_SUCCEED: {
                                 lorieEvent e1 = {.type = EVENT_APPLY_BUFFER};
@@ -348,7 +366,7 @@ static void *eventLoopThread(void *arg) {
                                 break;
                         }
                     } else {
-                        tlog(LOG_ERR, "Incomplete event received");
+                        tlog(LOG_ERR, "Incomplete event received: got %zd expected %zu", nread, sizeof(e));
                         goto cleanup;
                     }
                 } else if (events[i].events & (EPOLLERR | EPOLLHUP)) {

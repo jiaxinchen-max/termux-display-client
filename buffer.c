@@ -37,6 +37,23 @@ struct LorieBuffer {
     struct xorg_list link;
 };
 
+static ssize_t read_full(int fd, void *buf, size_t len) {
+    size_t off = 0;
+    while (off < len) {
+        ssize_t n = read(fd, (char *)buf + off, len - off);
+        if (n == 0)
+            return (ssize_t)off;
+        if (n < 0) {
+            if (errno == EINTR)
+                continue;
+            return -1;
+        }
+        off += (size_t)n;
+    }
+    return (ssize_t)off;
+}
+
+
 __attribute__((unused))
 static int memfd_create(const char *name, unsigned int flags) {
 #ifndef __NR_memfd_create
@@ -256,7 +273,12 @@ __LIBC_HIDDEN__ void LorieBuffer_recvHandleFromUnixSocket(int socketFd, LorieBuf
     buffer.lockedData = NULL;
     __sync_fetch_and_add(&buffer.refcount, 1); // refcount is the first object in the struct
 
-    read(socketFd, &buffer, sizeof(buffer));
+    ssize_t nread = read_full(socketFd, &buffer, sizeof(buffer));
+    if (nread != (ssize_t)sizeof(buffer)) {
+        if (outBuffer)
+            *outBuffer = NULL;
+        return;
+    }
     buffer.image = NULL; // Only for process-local use
     if (buffer.desc.type == LORIEBUFFER_FD) {
         size_t size = buffer.desc.stride * buffer.desc.height * sizeof(uint32_t);
