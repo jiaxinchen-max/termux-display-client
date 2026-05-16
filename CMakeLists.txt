@@ -12,7 +12,6 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
         # List libraries link to the target library
         android log m
 )
-
 install(TARGETS ${CMAKE_PROJECT_NAME} LIBRARY)
 install(FILES
         ${CMAKE_SOURCE_DIR}/include/buffer.h
@@ -26,5 +25,4 @@ target_link_libraries(termux-render-sample
         ${CMAKE_PROJECT_NAME}
         )
 set_target_properties(termux-render-sample PROPERTIES LINK_FLAGS "-Wl,--allow-shlib-undefined")
-
 install(TARGETS termux-render-sample RUNTIME)

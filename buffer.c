@@ -37,7 +37,6 @@ struct LorieBuffer {
     struct xorg_list link;
 };
 
-
 __attribute__((unused))
 static int memfd_create(const char *name, unsigned int flags) {
 #ifndef __NR_memfd_create
