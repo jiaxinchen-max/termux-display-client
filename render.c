@@ -40,6 +40,40 @@ static int screen_type = LORIEBUFFER_AHARDWAREBUFFER;
 LorieBuffer *lorieBuffer;
 struct lorie_shared_server_state *serverState;
 
+static int readFull(int fd, void *buffer, size_t size) {
+    size_t offset = 0;
+
+    while (offset < size) {
+        ssize_t count = read(fd, (char *) buffer + offset, size - offset);
+        if (count > 0) {
+            offset += count;
+            continue;
+        }
+
+        if (count == 0) {
+            if (offset == 0)
+                return 0;
+            errno = ECONNRESET;
+            return -1;
+        }
+
+        if (errno == EINTR)
+            continue;
+
+        if ((errno == EAGAIN || errno == EWOULDBLOCK) && offset == 0)
+            return -2;
+
+        return -1;
+    }
+
+    return 1;
+}
+
+static int readLorieEvent(int fd, lorieEvent *event) {
+    memset(event, 0, sizeof(*event));
+    return readFull(fd, event, sizeof(*event));
+}
+
 JNIEXPORT jstring JNICALL
 Java_com_termux_wayland_NativeLib_stringFromJNI(
         JNIEnv *env,
@@ -151,7 +185,8 @@ static void *eventLoopThread(void *arg) {
             if (events[i].data.fd == event_fd) {
                 if (events[i].events & EPOLLIN) {
                     lorieEvent e = {0};
-                    if (read(event_fd, &e, sizeof(e)) == sizeof(e)) {
+                    int readStatus = readLorieEvent(event_fd, &e);
+                    if (readStatus > 0) {
                         switch (e.type) {
                             case EVENT_SERVER_VERIFY_SUCCEED: {
                                 lorieEvent e1 = {.type = EVENT_APPLY_BUFFER};
@@ -201,8 +236,13 @@ static void *eventLoopThread(void *arg) {
                                 tlog(LOG_WARNING, "Unknown event type: %d", e.type);
                                 break;
                         }
+                    } else if (readStatus == 0) {
+                        tlog(LOG_ERR, "Connection closed");
+                        goto cleanup;
+                    } else if (readStatus == -2) {
+                        continue;
                     } else {
-                        tlog(LOG_ERR, "Incomplete event received");
+                        tlog(LOG_ERR, "Failed to read complete event: %s", strerror(errno));
                         goto cleanup;
                     }
                 } else if (events[i].events & (EPOLLERR | EPOLLHUP)) {
