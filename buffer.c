@@ -19,6 +19,7 @@
 #include <unistd.h>
 #include "include/list.h"
 #include "include/buffer.h"
+#include "include/tlog.h"
 
 struct LorieBuffer {
     int16_t refcount;
@@ -74,11 +75,14 @@ static int readFullFromSocket(int fd, void *buffer, size_t size) {
             continue;
         }
         if (count == 0) {
+            tlog(LOG_ERR, "readFullFromSocket closed after %zu/%zu bytes", offset, size);
             return offset == 0 ? 0 : -1;
         }
         if (errno == EINTR) {
             continue;
         }
+        tlog(LOG_ERR, "readFullFromSocket failed after %zu/%zu bytes: %s",
+             offset, size, strerror(errno));
         return -1;
     }
 
@@ -269,6 +273,8 @@ __LIBC_HIDDEN__ void LorieBuffer_recvHandleFromUnixSocket(int socketFd, LorieBuf
     // We should read buffer from socket despite outbuffer is NULL, otherwise we will get protocol error
     if (socketFd < 0)
         return;
+    tlog(LOG_INFO, "Receiving LorieBuffer from socket fd=%d sizeof(LorieBuffer)=%zu sizeof(desc)=%zu",
+         socketFd, sizeof(buffer), sizeof(buffer.desc));
 
     // Reset process-specific data;
     buffer.refcount = 0;
@@ -280,12 +286,17 @@ __LIBC_HIDDEN__ void LorieBuffer_recvHandleFromUnixSocket(int socketFd, LorieBuf
     if (readFullFromSocket(socketFd, &buffer, sizeof(buffer)) <= 0) {
         if (outBuffer)
             *outBuffer = NULL;
+        tlog(LOG_ERR, "Failed to receive LorieBuffer payload");
         return;
     }
     buffer.image = NULL; // Only for process-local use
+    tlog(LOG_INFO, "Received raw LorieBuffer desc width=%d stride=%d height=%d format=%d type=%d id=%llu fd=%d",
+         buffer.desc.width, buffer.desc.stride, buffer.desc.height,
+         buffer.desc.format, buffer.desc.type, (unsigned long long) buffer.desc.id, buffer.fd);
     if (buffer.desc.type == LORIEBUFFER_FD) {
         size_t size = buffer.desc.stride * buffer.desc.height * sizeof(uint32_t);
         buffer.fd = ancil_recv_fd(socketFd);
+        tlog(LOG_INFO, "Received LorieBuffer fd handle=%d", buffer.fd);
         if (buffer.fd == -1) {
             if (outBuffer)
                 *outBuffer = NULL;
@@ -299,8 +310,10 @@ __LIBC_HIDDEN__ void LorieBuffer_recvHandleFromUnixSocket(int socketFd, LorieBuf
                 *outBuffer = NULL;
             return;
         }
-    } else if (buffer.desc.type == LORIEBUFFER_AHARDWAREBUFFER)
+    } else if (buffer.desc.type == LORIEBUFFER_AHARDWAREBUFFER) {
         AHardwareBuffer_recvHandleFromUnixSocket(socketFd, &buffer.desc.buffer);
+        tlog(LOG_INFO, "Received AHardwareBuffer handle=%p", buffer.desc.buffer);
+    }
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "MemoryLeak"
@@ -314,12 +327,14 @@ __LIBC_HIDDEN__ void LorieBuffer_recvHandleFromUnixSocket(int socketFd, LorieBuf
             AHardwareBuffer_release(buffer.desc.buffer);
         if (outBuffer)
             outBuffer = NULL;
+        tlog(LOG_ERR, "Failed to allocate client LorieBuffer copy");
         return;
     }
 
     *ret = buffer;
     xorg_list_init(&ret->link);
     *outBuffer = ret;
+    tlog(LOG_INFO, "LorieBuffer receive completed out=%p", ret);
 }
 
 __LIBC_HIDDEN__ int ancil_recv_fd(int sock) {
@@ -350,7 +365,12 @@ __LIBC_HIDDEN__ int ancil_recv_fd(int sock) {
     ((int*) CMSG_DATA(cmsg))[0] = -1;
 #pragma clang diagnostic pop
 
-    if (recvmsg(sock, &message_header, 0) < 0) return -1;
+    if (recvmsg(sock, &message_header, 0) < 0) {
+        tlog(LOG_ERR, "ancil_recv_fd failed: %s", strerror(errno));
+        return -1;
+    }
 
-    return ((int*) CMSG_DATA(cmsg))[0];
+    int fd = ((int*) CMSG_DATA(cmsg))[0];
+    tlog(LOG_INFO, "ancil_recv_fd sock=%d fd=%d", sock, fd);
+    return fd;
 }
