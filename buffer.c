@@ -64,6 +64,27 @@ static inline size_t alignToPage(size_t size) {
     return (size + page_size - 1) & ~(page_size - 1);
 }
 
+static int readFullFromSocket(int fd, void *buffer, size_t size) {
+    size_t offset = 0;
+
+    while (offset < size) {
+        ssize_t count = read(fd, (char *) buffer + offset, size - offset);
+        if (count > 0) {
+            offset += count;
+            continue;
+        }
+        if (count == 0) {
+            return offset == 0 ? 0 : -1;
+        }
+        if (errno == EINTR) {
+            continue;
+        }
+        return -1;
+    }
+
+    return 1;
+}
+
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "UnreachableCallsOfFunction"
 int LorieBuffer_createRegion(char const* name, size_t size) {
@@ -256,7 +277,11 @@ __LIBC_HIDDEN__ void LorieBuffer_recvHandleFromUnixSocket(int socketFd, LorieBuf
     buffer.lockedData = NULL;
     __sync_fetch_and_add(&buffer.refcount, 1); // refcount is the first object in the struct
 
-    read(socketFd, &buffer, sizeof(buffer));
+    if (readFullFromSocket(socketFd, &buffer, sizeof(buffer)) <= 0) {
+        if (outBuffer)
+            *outBuffer = NULL;
+        return;
+    }
     buffer.image = NULL; // Only for process-local use
     if (buffer.desc.type == LORIEBUFFER_FD) {
         size_t size = buffer.desc.stride * buffer.desc.height * sizeof(uint32_t);
