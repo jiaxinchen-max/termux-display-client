@@ -34,6 +34,14 @@ static int screen_type = LORIEBUFFER_AHARDWAREBUFFER;
 
 #define MAX_RETRY_TIMES 5
 
+#ifdef SOCK_SEQPACKET
+#define RENDER_SOCKET_TYPE SOCK_SEQPACKET
+#define RENDER_SOCKET_TYPE_NAME "SOCK_SEQPACKET"
+#else
+#define RENDER_SOCKET_TYPE SOCK_STREAM
+#define RENDER_SOCKET_TYPE_NAME "SOCK_STREAM"
+#endif
+
 #define SOCKET_DIR "/data/data/com.termux/files/home/tmp"
 #define SOCKET_PATH SOCKET_DIR "/wayland-0"
 
@@ -349,13 +357,13 @@ static int waitForInitialization(void) {
 
 int connectToRender() {
     buffer_ready = 0;
-    tlog(LOG_INFO, "connectToRender start socket=%s sizeof(lorieEvent)=%zu",
-         SOCKET_PATH, sizeof(lorieEvent));
+    tlog(LOG_INFO, "connectToRender start socket=%s type=%s sizeof(lorieEvent)=%zu",
+         SOCKET_PATH, RENDER_SOCKET_TYPE_NAME, sizeof(lorieEvent));
 
     for (connect_retry = 0; connect_retry < MAX_RETRY_TIMES; connect_retry++) {
         struct sockaddr_un serverAddr;
 
-        event_fd = socket(AF_UNIX, SOCK_STREAM, 0);
+        event_fd = socket(AF_UNIX, RENDER_SOCKET_TYPE, 0);
         if (event_fd < 0) {
             tlog(LOG_ERR, "socket: %s", strerror(errno));
             return EXIT_FAILURE;
