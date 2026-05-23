@@ -43,7 +43,7 @@ static int screen_type = LORIEBUFFER_AHARDWAREBUFFER;
 #endif
 
 #define SOCKET_DIR "/data/data/com.termux/files/home/tmp"
-#define SOCKET_PATH SOCKET_DIR "/wayland-0"
+#define SOCKET_PATH SOCKET_DIR "/termux-render"
 
 LorieBuffer *lorieBuffer;
 struct lorie_shared_server_state *serverState;
