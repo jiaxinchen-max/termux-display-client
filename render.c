@@ -6,11 +6,13 @@
 #include <string.h>
 #include <errno.h>
 #include <signal.h>
+#include <stdarg.h>
 #include <time.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/mman.h>
 #include "include/buffer.h"
+#define TERMUX_RENDER_NO_SET_SCREEN_CONFIG_MACRO
 #include "include/render.h"
 #include "include/tlog.h"
 
@@ -263,15 +265,7 @@ struct lorie_shared_server_state *get_serverState(void) {
     return serverState;
 }
 
-void setScreenConfig(int width, int height, int framerate) {
-    if (width > 0) screen_width = width;
-    if (height > 0) screen_height = height;
-    if (framerate > 0) screen_framerate = framerate;
-    tlog(LOG_INFO, "setScreenConfig width=%d height=%d framerate=%d format=%d type=%d",
-         screen_width, screen_height, screen_framerate, screen_format, screen_type);
-}
-
-void setScreenBufferConfig(int format, int type) {
+static void applyScreenBufferConfig(int format, int type) {
     if (isSupportedScreenFormat(format))
         screen_format = format;
     else
@@ -281,9 +275,33 @@ void setScreenBufferConfig(int format, int type) {
         screen_type = type;
     else
         tlog(LOG_WARNING, "Ignoring unsupported screen buffer type=%d", type);
+}
 
-    tlog(LOG_INFO, "setScreenBufferConfig format=%d type=%d",
-         screen_format, screen_type);
+void setScreenConfig(int width, int height, int framerate, int option_count, ...) {
+    if (width > 0) screen_width = width;
+    if (height > 0) screen_height = height;
+    if (framerate > 0) screen_framerate = framerate;
+
+    if (option_count >= 2) {
+        va_list args;
+        int format;
+        int type;
+
+        va_start(args, option_count);
+        format = va_arg(args, int);
+        type = va_arg(args, int);
+        va_end(args);
+
+        applyScreenBufferConfig(format, type);
+    } else if (option_count != 0) {
+        tlog(LOG_WARNING, "Ignoring unsupported setScreenConfig option count=%d",
+             option_count);
+    }
+
+    tlog(LOG_INFO, "setScreenConfig width=%d height=%d framerate=%d "
+         "format=%d type=%d",
+         screen_width, screen_height, screen_framerate, screen_format,
+         screen_type);
 }
 
 static void waylandApplyBuffer() {
@@ -559,13 +577,6 @@ int connectToRender() {
     }
 
     return EXIT_FAILURE;
-}
-
-int connectToRenderWithConfig(int width, int height, int framerate,
-                              int format, int type) {
-    setScreenConfig(width, height, framerate);
-    setScreenBufferConfig(format, type);
-    return connectToRender();
 }
 
 void stopEventLoop(void) {

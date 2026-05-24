@@ -27,7 +27,7 @@ add_library(${CMAKE_PROJECT_NAME} SHARED
 
 target_link_libraries(${CMAKE_PROJECT_NAME}
         # List libraries link to the target library
-        android log m
+        dl log m
 )
 install(TARGETS ${CMAKE_PROJECT_NAME}
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
