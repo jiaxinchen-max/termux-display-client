@@ -24,6 +24,16 @@ static volatile int buffer_ready = 0;
 static volatile int event_loop_running = 0;
 static pthread_t event_thread_id = 0;
 
+typedef enum {
+    HANDSHAKE_WAIT_SERVER_VERIFY,
+    HANDSHAKE_WAIT_ADD_BUFFER,
+    HANDSHAKE_WAIT_SERVER_STATE,
+    HANDSHAKE_WAIT_EVENT_FD,
+    HANDSHAKE_COMPLETE,
+} handshakePhase;
+
+static volatile handshakePhase handshake_phase = HANDSHAKE_WAIT_SERVER_VERIFY;
+
 static void (*onExitCallback)(void) = NULL;
 
 static int screen_width = 1080;
@@ -34,7 +44,11 @@ static int screen_type = LORIEBUFFER_AHARDWAREBUFFER;
 
 #define MAX_RETRY_TIMES 5
 
-#ifdef SOCK_SEQPACKET
+#ifndef TERMUX_RENDER_USE_SEQPACKET
+#define TERMUX_RENDER_USE_SEQPACKET 0
+#endif
+
+#if TERMUX_RENDER_USE_SEQPACKET && defined(SOCK_SEQPACKET)
 #define RENDER_SOCKET_TYPE SOCK_SEQPACKET
 #define RENDER_SOCKET_TYPE_NAME "SOCK_SEQPACKET"
 #else
@@ -62,6 +76,64 @@ static const char *eventTypeName(uint8_t type) {
     case EVENT_CLIENT_VERIFY_SUCCEED: return "EVENT_CLIENT_VERIFY_SUCCEED";
     case EVENT_STOP_RENDER: return "EVENT_STOP_RENDER";
     default: return "UNKNOWN";
+    }
+}
+
+static const char *handshakePhaseName(handshakePhase phase) {
+    switch (phase) {
+    case HANDSHAKE_WAIT_SERVER_VERIFY: return "WAIT_SERVER_VERIFY";
+    case HANDSHAKE_WAIT_ADD_BUFFER: return "WAIT_ADD_BUFFER";
+    case HANDSHAKE_WAIT_SERVER_STATE: return "WAIT_SERVER_STATE";
+    case HANDSHAKE_WAIT_EVENT_FD: return "WAIT_EVENT_FD";
+    case HANDSHAKE_COMPLETE: return "COMPLETE";
+    default: return "UNKNOWN";
+    }
+}
+
+static bool isKnownEventType(uint8_t type) {
+    switch (type) {
+    case EVENT_SHARED_SERVER_STATE:
+    case EVENT_ADD_BUFFER:
+    case EVENT_REMOVE_BUFFER:
+    case EVENT_SCREEN_SIZE:
+    case EVENT_TOUCH:
+    case EVENT_MOUSE:
+    case EVENT_KEY:
+    case EVENT_STYLUS:
+    case EVENT_STYLUS_ENABLE:
+    case EVENT_UNICODE:
+    case EVENT_CLIPBOARD_ENABLE:
+    case EVENT_CLIPBOARD_ANNOUNCE:
+    case EVENT_CLIPBOARD_REQUEST:
+    case EVENT_CLIPBOARD_SEND:
+    case EVENT_WINDOW_FOCUS_CHANGED:
+    case EVENT_APPLY_SERVER_STATE:
+    case EVENT_APPLY_BUFFER:
+    case EVENT_APPLY_EVENT_FD:
+    case EVENT_SHARED_EVENT_FD:
+    case EVENT_SERVER_VERIFY_SUCCEED:
+    case EVENT_CLIENT_VERIFY_SUCCEED:
+    case EVENT_STOP_RENDER:
+        return true;
+    default:
+        return false;
+    }
+}
+
+static bool handshakeAllowsEvent(uint8_t type) {
+    switch (handshake_phase) {
+    case HANDSHAKE_WAIT_SERVER_VERIFY:
+        return type == EVENT_SERVER_VERIFY_SUCCEED;
+    case HANDSHAKE_WAIT_ADD_BUFFER:
+        return type == EVENT_ADD_BUFFER;
+    case HANDSHAKE_WAIT_SERVER_STATE:
+        return type == EVENT_SHARED_SERVER_STATE;
+    case HANDSHAKE_WAIT_EVENT_FD:
+        return type == EVENT_SHARED_EVENT_FD;
+    case HANDSHAKE_COMPLETE:
+        return true;
+    default:
+        return false;
     }
 }
 
@@ -96,7 +168,7 @@ static int readFull(int fd, void *buffer, size_t size) {
 
 static int readLorieEvent(int fd, lorieEvent *event) {
     memset(event, 0, sizeof(*event));
-#ifdef SOCK_SEQPACKET
+#if TERMUX_RENDER_USE_SEQPACKET && defined(SOCK_SEQPACKET)
     ssize_t count;
     do {
         count = read(fd, event, sizeof(*event));
@@ -112,14 +184,47 @@ static int readLorieEvent(int fd, lorieEvent *event) {
     }
 
     if ((size_t) count != sizeof(*event)) {
-        tlog(LOG_WARNING, "Skipping non-event packet size=%zd expected=%zu first_byte=%u",
-             count, sizeof(*event), event->type);
-        return -2;
+        tlog(LOG_ERR, "Protocol error during handshake: unexpected packet size=%zd expected=%zu first_byte=%u phase=%s",
+             count, sizeof(*event), event->type, handshakePhaseName(handshake_phase));
+        errno = EPROTO;
+        return -1;
+    }
+
+    if (!isKnownEventType(event->type)) {
+        tlog(LOG_ERR, "Protocol error during handshake: unknown event type=%u packet size=%zd phase=%s",
+             event->type, count, handshakePhaseName(handshake_phase));
+        errno = EPROTO;
+        return -1;
+    }
+
+    if (handshake_phase != HANDSHAKE_COMPLETE && !handshakeAllowsEvent(event->type)) {
+        tlog(LOG_ERR, "Protocol error during handshake: unexpected event type=%u (%s) phase=%s",
+             event->type, eventTypeName(event->type), handshakePhaseName(handshake_phase));
+        errno = EPROTO;
+        return -1;
     }
 
     return 1;
 #else
-    return readFull(fd, event, sizeof(*event));
+    int ret = readFull(fd, event, sizeof(*event));
+    if (ret <= 0)
+        return ret;
+
+    if (!isKnownEventType(event->type)) {
+        tlog(LOG_ERR, "Protocol error during handshake: unknown event type=%u phase=%s",
+             event->type, handshakePhaseName(handshake_phase));
+        errno = EPROTO;
+        return -1;
+    }
+
+    if (handshake_phase != HANDSHAKE_COMPLETE && !handshakeAllowsEvent(event->type)) {
+        tlog(LOG_ERR, "Protocol error during handshake: unexpected event type=%u (%s) phase=%s",
+             event->type, eventTypeName(event->type), handshakePhaseName(handshake_phase));
+        errno = EPROTO;
+        return -1;
+    }
+
+    return 1;
 #endif
 }
 
@@ -275,18 +380,26 @@ static void *eventLoopThread(void *arg) {
                                 }
                                 tlog(LOG_INFO, "Sent EVENT_SCREEN_SIZE width=%d height=%d framerate=%d format=%d type=%d",
                                      screen_width, screen_height, screen_framerate, screen_format, screen_type);
+                                handshake_phase = HANDSHAKE_WAIT_ADD_BUFFER;
                                 break;
                             }
                             case EVENT_SHARED_SERVER_STATE: {
                                 waylandApplySharedServerState();
+                                handshake_phase = HANDSHAKE_WAIT_EVENT_FD;
                                 break;
                             }
                             case EVENT_ADD_BUFFER: {
                                 waylandApplyBuffer();
+                                if (!lorieBuffer) {
+                                    tlog(LOG_ERR, "Protocol error during handshake: EVENT_ADD_BUFFER did not initialize buffer");
+                                    goto cleanup;
+                                }
+                                handshake_phase = HANDSHAKE_WAIT_SERVER_STATE;
                                 break;
                             }
                             case EVENT_SHARED_EVENT_FD:{
                                 waylandApplyEventFD();
+                                handshake_phase = HANDSHAKE_COMPLETE;
                                 break;
                             }
                             case EVENT_STOP_RENDER: {
@@ -309,7 +422,13 @@ static void *eventLoopThread(void *arg) {
                                 return NULL;
                             }
                             default:
-                                tlog(LOG_WARNING, "Unknown event type: %d (%s)", e.type, eventTypeName(e.type));
+                                if (handshake_phase != HANDSHAKE_COMPLETE) {
+                                    tlog(LOG_ERR, "Protocol error during handshake: unexpected event type=%d (%s) phase=%s",
+                                         e.type, eventTypeName(e.type), handshakePhaseName(handshake_phase));
+                                    errno = EPROTO;
+                                    goto cleanup;
+                                }
+                                tlog(LOG_WARNING, "Unexpected control event type: %d (%s)", e.type, eventTypeName(e.type));
                                 break;
                         }
                     } else if (readStatus == 0) {
@@ -339,6 +458,9 @@ static void *eventLoopThread(void *arg) {
     }
     pthread_mutex_unlock(&mutex);
 
+    waylandDestroyBuffer();
+    waylandDestroySharedServerState();
+
     if (epfd != -1) {
         close(epfd);
         epfd = -1;
@@ -346,6 +468,10 @@ static void *eventLoopThread(void *arg) {
     if (event_fd != -1) {
         close(event_fd);
         event_fd = -1;
+    }
+    if (conn_fd != -1) {
+        close(conn_fd);
+        conn_fd = -1;
     }
 
     event_loop_running = 0;
@@ -381,6 +507,7 @@ static int waitForInitialization(void) {
 
 int connectToRender() {
     buffer_ready = 0;
+    handshake_phase = HANDSHAKE_WAIT_SERVER_VERIFY;
     tlog(LOG_INFO, "connectToRender start socket=%s type=%s sizeof(lorieEvent)=%zu",
          SOCKET_PATH, RENDER_SOCKET_TYPE_NAME, sizeof(lorieEvent));
 
