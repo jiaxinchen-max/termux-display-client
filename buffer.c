@@ -225,6 +225,7 @@ const LorieBuffer_Desc* LorieBuffer_description(LorieBuffer* buffer) {
 
  int LorieBuffer_lock(LorieBuffer* buffer, void** out) {
     int ret = 0;
+    void *lockedData = NULL;
     if (!buffer)
         return ENODEV;
 
@@ -236,9 +237,18 @@ const LorieBuffer_Desc* LorieBuffer_description(LorieBuffer* buffer) {
     }
 
     if (buffer->desc.type == LORIEBUFFER_REGULAR || buffer->desc.type == LORIEBUFFER_FD)
-        buffer->lockedData = buffer->desc.data;
+        lockedData = buffer->desc.data;
     else if (buffer->desc.type == LORIEBUFFER_AHARDWAREBUFFER)
-        ret = AHardwareBuffer_lock(buffer->desc.buffer, AHARDWAREBUFFER_USAGE_CPU_READ_OFTEN | AHARDWAREBUFFER_USAGE_CPU_WRITE_OFTEN, -1, NULL, &buffer->lockedData);
+        ret = AHardwareBuffer_lock(buffer->desc.buffer, AHARDWAREBUFFER_USAGE_CPU_READ_OFTEN | AHARDWAREBUFFER_USAGE_CPU_WRITE_OFTEN, -1, NULL, &lockedData);
+
+    if (ret != 0 || !lockedData) {
+        buffer->lockedData = NULL;
+        if (out)
+            *out = NULL;
+        return ret != 0 ? ret : EFAULT;
+    }
+
+    buffer->lockedData = lockedData;
 
     if (out)
         *out = buffer->lockedData;
