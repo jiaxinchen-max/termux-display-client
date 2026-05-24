@@ -62,3 +62,12 @@ target_link_libraries(termux-render-sample
         )
 set_target_properties(termux-render-sample PROPERTIES LINK_FLAGS "-Wl,--allow-shlib-undefined")
 install(TARGETS termux-render-sample RUNTIME)
+
+add_executable(termux-render-sample-cpp main.cpp)
+target_compile_definitions(termux-render-sample-cpp PRIVATE
+        TERMUX_RENDER_ASSETS_DIR="${TERMUX_RENDER_ASSETS_DIR}")
+target_link_libraries(termux-render-sample-cpp
+        ${CMAKE_PROJECT_NAME}
+        )
+set_target_properties(termux-render-sample-cpp PROPERTIES LINK_FLAGS "-Wl,--allow-shlib-undefined")
+install(TARGETS termux-render-sample-cpp RUNTIME)
