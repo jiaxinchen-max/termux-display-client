@@ -60,6 +60,16 @@ static int screen_type = LORIEBUFFER_AHARDWAREBUFFER;
 LorieBuffer *lorieBuffer;
 struct lorie_shared_server_state *serverState;
 
+static bool isSupportedScreenFormat(int format) {
+    return format == AHARDWAREBUFFER_FORMAT_R8G8B8X8_UNORM ||
+           format == AHARDWAREBUFFER_FORMAT_B8G8R8A8_UNORM;
+}
+
+static bool isSupportedScreenType(int type) {
+    return type == LORIEBUFFER_FD ||
+           type == LORIEBUFFER_AHARDWAREBUFFER;
+}
+
 static const char *eventTypeName(uint8_t type) {
     switch (type) {
     case EVENT_SHARED_SERVER_STATE: return "EVENT_SHARED_SERVER_STATE";
@@ -259,6 +269,21 @@ void setScreenConfig(int width, int height, int framerate) {
     if (framerate > 0) screen_framerate = framerate;
     tlog(LOG_INFO, "setScreenConfig width=%d height=%d framerate=%d format=%d type=%d",
          screen_width, screen_height, screen_framerate, screen_format, screen_type);
+}
+
+void setScreenBufferConfig(int format, int type) {
+    if (isSupportedScreenFormat(format))
+        screen_format = format;
+    else
+        tlog(LOG_WARNING, "Ignoring unsupported screen buffer format=%d", format);
+
+    if (isSupportedScreenType(type))
+        screen_type = type;
+    else
+        tlog(LOG_WARNING, "Ignoring unsupported screen buffer type=%d", type);
+
+    tlog(LOG_INFO, "setScreenBufferConfig format=%d type=%d",
+         screen_format, screen_type);
 }
 
 static void waylandApplyBuffer() {
@@ -534,6 +559,13 @@ int connectToRender() {
     }
 
     return EXIT_FAILURE;
+}
+
+int connectToRenderWithConfig(int width, int height, int framerate,
+                              int format, int type) {
+    setScreenConfig(width, height, framerate);
+    setScreenBufferConfig(format, type);
+    return connectToRender();
 }
 
 void stopEventLoop(void) {

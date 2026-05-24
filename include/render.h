@@ -344,7 +344,9 @@ static int android_to_linux_keycode[304] = {
         [ 210  /* ANDROID_KEYCODE_CALCULATOR */] = KEY_CALC,
 };
 void setScreenConfig(int, int, int);
+void setScreenBufferConfig(int, int);
 int connectToRender();
+int connectToRenderWithConfig(int, int, int, int, int);
 void setExitCallback(void (*callback)(void));
 void stopEventLoop(void);
 /** Returns the fd for input events (mouse, touch, etc.), or -1 if not connected. */
