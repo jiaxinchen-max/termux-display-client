@@ -225,7 +225,6 @@ const LorieBuffer_Desc* LorieBuffer_description(LorieBuffer* buffer) {
 
  int LorieBuffer_lock(LorieBuffer* buffer, void** out) {
     int ret = 0;
-    void *lockedData = NULL;
     if (!buffer)
         return ENODEV;
 
@@ -237,18 +236,9 @@ const LorieBuffer_Desc* LorieBuffer_description(LorieBuffer* buffer) {
     }
 
     if (buffer->desc.type == LORIEBUFFER_REGULAR || buffer->desc.type == LORIEBUFFER_FD)
-        lockedData = buffer->desc.data;
+        buffer->lockedData = buffer->desc.data;
     else if (buffer->desc.type == LORIEBUFFER_AHARDWAREBUFFER)
-        ret = AHardwareBuffer_lock(buffer->desc.buffer, AHARDWAREBUFFER_USAGE_CPU_READ_OFTEN | AHARDWAREBUFFER_USAGE_CPU_WRITE_OFTEN, -1, NULL, &lockedData);
-
-    if (ret != 0 || !lockedData) {
-        buffer->lockedData = NULL;
-        if (out)
-            *out = NULL;
-        return ret != 0 ? ret : EFAULT;
-    }
-
-    buffer->lockedData = lockedData;
+        ret = AHardwareBuffer_lock(buffer->desc.buffer, AHARDWAREBUFFER_USAGE_CPU_READ_OFTEN | AHARDWAREBUFFER_USAGE_CPU_WRITE_OFTEN, -1, NULL, &buffer->lockedData);
 
     if (out)
         *out = buffer->lockedData;
@@ -321,23 +311,7 @@ __LIBC_HIDDEN__ void LorieBuffer_recvHandleFromUnixSocket(int socketFd, LorieBuf
             return;
         }
     } else if (buffer.desc.type == LORIEBUFFER_AHARDWAREBUFFER) {
-        int ahbSocketFd = ancil_recv_fd(socketFd);
-        if (ahbSocketFd == -1) {
-            if (outBuffer)
-                *outBuffer = NULL;
-            tlog(LOG_ERR, "Failed to receive AHardwareBuffer side socket");
-            return;
-        }
-
-        int status = AHardwareBuffer_recvHandleFromUnixSocket(ahbSocketFd, &buffer.desc.buffer);
-        close(ahbSocketFd);
-        if (status != 0 || !buffer.desc.buffer) {
-            if (outBuffer)
-                *outBuffer = NULL;
-            tlog(LOG_ERR, "Failed to receive AHardwareBuffer handle status=%d handle=%p",
-                 status, buffer.desc.buffer);
-            return;
-        }
+        AHardwareBuffer_recvHandleFromUnixSocket(socketFd, &buffer.desc.buffer);
         tlog(LOG_INFO, "Received AHardwareBuffer handle=%p", buffer.desc.buffer);
     }
 
