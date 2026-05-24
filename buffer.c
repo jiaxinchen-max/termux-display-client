@@ -311,7 +311,23 @@ __LIBC_HIDDEN__ void LorieBuffer_recvHandleFromUnixSocket(int socketFd, LorieBuf
             return;
         }
     } else if (buffer.desc.type == LORIEBUFFER_AHARDWAREBUFFER) {
-        AHardwareBuffer_recvHandleFromUnixSocket(socketFd, &buffer.desc.buffer);
+        int ahbSocketFd = ancil_recv_fd(socketFd);
+        if (ahbSocketFd == -1) {
+            if (outBuffer)
+                *outBuffer = NULL;
+            tlog(LOG_ERR, "Failed to receive AHardwareBuffer side socket");
+            return;
+        }
+
+        int status = AHardwareBuffer_recvHandleFromUnixSocket(ahbSocketFd, &buffer.desc.buffer);
+        close(ahbSocketFd);
+        if (status != 0 || !buffer.desc.buffer) {
+            if (outBuffer)
+                *outBuffer = NULL;
+            tlog(LOG_ERR, "Failed to receive AHardwareBuffer handle status=%d handle=%p",
+                 status, buffer.desc.buffer);
+            return;
+        }
         tlog(LOG_INFO, "Received AHardwareBuffer handle=%p", buffer.desc.buffer);
     }
 
