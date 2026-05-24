@@ -9,14 +9,12 @@
 #include <time.h>
 #include <sys/socket.h>
 #include <sys/un.h>
-#include <sys/epoll.h>
 #include <sys/mman.h>
 #include "include/buffer.h"
 #include "include/render.h"
 #include "include/tlog.h"
 
-static int event_fd = -1, conn_fd=-1, epfd = -1, stateFd = -1;
-static struct epoll_event ev, events[5];
+static int event_fd = -1, conn_fd=-1, stateFd = -1;
 static int connect_retry = 0;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
@@ -344,107 +342,85 @@ static void waylandApplyEventFD(){
 
 static void *eventLoopThread(void *arg) {
     event_loop_running = 1;
-    tlog(LOG_INFO, "Render event loop started, event_fd=%d sizeof(lorieEvent)=%zu",
+    tlog(LOG_INFO, "Render blocking event loop started, event_fd=%d sizeof(lorieEvent)=%zu",
          event_fd, sizeof(lorieEvent));
 
     while (event_loop_running) {
-        int nfds = epoll_wait(epfd, events, 5, 1000);
-        if (nfds == -1) {
-            if (errno == EINTR) continue;
-            tlog(LOG_ERR, "epoll_wait error: %s", strerror(errno));
-            break;
-        }
-
-        if (nfds == 0) continue;
-
-        for (int i = 0; i < nfds; ++i) {
-            if (events[i].data.fd == event_fd) {
-                if (events[i].events & EPOLLIN) {
-                    lorieEvent e = {0};
-                    int readStatus = readLorieEvent(event_fd, &e);
-                    if (readStatus > 0) {
-                        tlog(LOG_INFO, "Received event type=%u (%s)", e.type, eventTypeName(e.type));
-                        switch (e.type) {
-                            case EVENT_SERVER_VERIFY_SUCCEED: {
-                                tlog(LOG_INFO, "Handling EVENT_SERVER_VERIFY_SUCCEED");
-                                lorieEvent e1 = {.type = EVENT_APPLY_BUFFER};
-                                if (write(event_fd, &e1, sizeof(e1)) != sizeof(e1)) {
-                                    tlog(LOG_ERR, "Failed to send APPLY_BUFFER");
-                                    goto cleanup;
-                                }
-                                tlog(LOG_INFO, "Sent EVENT_APPLY_BUFFER");
-                                lorieEvent e2 = {.screenSize = {.t = EVENT_SCREEN_SIZE, .width = screen_width, .height = screen_height, .framerate = screen_framerate, .format = screen_format, .type = screen_type}};
-                                if (write(event_fd, &e2, sizeof(e2)) != sizeof(e2)) {
-                                    tlog(LOG_ERR, "Failed to send BUFFER PROPERTIES");
-                                    goto cleanup;
-                                }
-                                tlog(LOG_INFO, "Sent EVENT_SCREEN_SIZE width=%d height=%d framerate=%d format=%d type=%d",
-                                     screen_width, screen_height, screen_framerate, screen_format, screen_type);
-                                handshake_phase = HANDSHAKE_WAIT_ADD_BUFFER;
-                                break;
-                            }
-                            case EVENT_SHARED_SERVER_STATE: {
-                                waylandApplySharedServerState();
-                                handshake_phase = HANDSHAKE_WAIT_EVENT_FD;
-                                break;
-                            }
-                            case EVENT_ADD_BUFFER: {
-                                waylandApplyBuffer();
-                                if (!lorieBuffer) {
-                                    tlog(LOG_ERR, "Protocol error during handshake: EVENT_ADD_BUFFER did not initialize buffer");
-                                    goto cleanup;
-                                }
-                                handshake_phase = HANDSHAKE_WAIT_SERVER_STATE;
-                                break;
-                            }
-                            case EVENT_SHARED_EVENT_FD:{
-                                waylandApplyEventFD();
-                                handshake_phase = HANDSHAKE_COMPLETE;
-                                break;
-                            }
-                            case EVENT_STOP_RENDER: {
-                                event_loop_running = 0;
-                                waylandDestroyBuffer();
-                                waylandDestroySharedServerState();
-                                if (epfd != -1) {
-                                    close(epfd);
-                                    epfd = -1;
-                                }
-                                if (event_fd != -1) {
-                                    close(event_fd);
-                                    event_fd = -1;
-                                }
-                                if (onExitCallback) {
-                                    onExitCallback();
-                                } else {
-                                    exit(0);
-                                }
-                                return NULL;
-                            }
-                            default:
-                                if (handshake_phase != HANDSHAKE_COMPLETE) {
-                                    tlog(LOG_ERR, "Protocol error during handshake: unexpected event type=%d (%s) phase=%s",
-                                         e.type, eventTypeName(e.type), handshakePhaseName(handshake_phase));
-                                    errno = EPROTO;
-                                    goto cleanup;
-                                }
-                                tlog(LOG_WARNING, "Unexpected control event type: %d (%s)", e.type, eventTypeName(e.type));
-                                break;
-                        }
-                    } else if (readStatus == 0) {
-                        tlog(LOG_ERR, "Connection closed");
-                        goto cleanup;
-                    } else if (readStatus == -2) {
-                        continue;
-                    } else {
-                        tlog(LOG_ERR, "Failed to read complete event: %s", strerror(errno));
+        lorieEvent e = {0};
+        int readStatus = readLorieEvent(event_fd, &e);
+        if (readStatus > 0) {
+            tlog(LOG_INFO, "Received event type=%u (%s)", e.type, eventTypeName(e.type));
+            switch (e.type) {
+                case EVENT_SERVER_VERIFY_SUCCEED: {
+                    tlog(LOG_INFO, "Handling EVENT_SERVER_VERIFY_SUCCEED");
+                    lorieEvent e1 = {.type = EVENT_APPLY_BUFFER};
+                    if (write(event_fd, &e1, sizeof(e1)) != sizeof(e1)) {
+                        tlog(LOG_ERR, "Failed to send APPLY_BUFFER");
                         goto cleanup;
                     }
-                } else if (events[i].events & (EPOLLERR | EPOLLHUP)) {
-                    tlog(LOG_ERR, "Connection error/hangup detected");
-                    goto cleanup;
+                    tlog(LOG_INFO, "Sent EVENT_APPLY_BUFFER");
+                    lorieEvent e2 = {.screenSize = {.t = EVENT_SCREEN_SIZE, .width = screen_width, .height = screen_height, .framerate = screen_framerate, .format = screen_format, .type = screen_type}};
+                    if (write(event_fd, &e2, sizeof(e2)) != sizeof(e2)) {
+                        tlog(LOG_ERR, "Failed to send BUFFER PROPERTIES");
+                        goto cleanup;
+                    }
+                    tlog(LOG_INFO, "Sent EVENT_SCREEN_SIZE width=%d height=%d framerate=%d format=%d type=%d",
+                         screen_width, screen_height, screen_framerate, screen_format, screen_type);
+                    handshake_phase = HANDSHAKE_WAIT_ADD_BUFFER;
+                    break;
                 }
+                case EVENT_SHARED_SERVER_STATE: {
+                    waylandApplySharedServerState();
+                    handshake_phase = HANDSHAKE_WAIT_EVENT_FD;
+                    break;
+                }
+                case EVENT_ADD_BUFFER: {
+                    waylandApplyBuffer();
+                    if (!lorieBuffer) {
+                        tlog(LOG_ERR, "Protocol error during handshake: EVENT_ADD_BUFFER did not initialize buffer");
+                        goto cleanup;
+                    }
+                    handshake_phase = HANDSHAKE_WAIT_SERVER_STATE;
+                    break;
+                }
+                case EVENT_SHARED_EVENT_FD:{
+                    waylandApplyEventFD();
+                    handshake_phase = HANDSHAKE_COMPLETE;
+                    break;
+                }
+                case EVENT_STOP_RENDER: {
+                    event_loop_running = 0;
+                    waylandDestroyBuffer();
+                    waylandDestroySharedServerState();
+                    if (event_fd != -1) {
+                        close(event_fd);
+                        event_fd = -1;
+                    }
+                    if (onExitCallback) {
+                        onExitCallback();
+                    } else {
+                        exit(0);
+                    }
+                    return NULL;
+                }
+                default:
+                    if (handshake_phase != HANDSHAKE_COMPLETE) {
+                        tlog(LOG_ERR, "Protocol error during handshake: unexpected event type=%d (%s) phase=%s",
+                             e.type, eventTypeName(e.type), handshakePhaseName(handshake_phase));
+                        errno = EPROTO;
+                        goto cleanup;
+                    }
+                    tlog(LOG_WARNING, "Unexpected control event type: %d (%s)", e.type, eventTypeName(e.type));
+                    break;
             }
+        } else if (readStatus == 0) {
+            tlog(LOG_ERR, "Connection closed");
+            goto cleanup;
+        } else if (readStatus == -2) {
+            continue;
+        } else {
+            tlog(LOG_ERR, "Failed to read complete event: %s", strerror(errno));
+            goto cleanup;
         }
     }
 
@@ -461,10 +437,6 @@ static void *eventLoopThread(void *arg) {
     waylandDestroyBuffer();
     waylandDestroySharedServerState();
 
-    if (epfd != -1) {
-        close(epfd);
-        epfd = -1;
-    }
     if (event_fd != -1) {
         close(event_fd);
         event_fd = -1;
@@ -536,31 +508,10 @@ int connectToRender() {
         tlog(LOG_INFO, "Connected to render socket, event_fd=%d attempt=%d/%d",
              event_fd, connect_retry + 1, MAX_RETRY_TIMES);
 
-        epfd = epoll_create1(0);
-        if (epfd == -1) {
-            tlog(LOG_ERR, "epoll_create1 failed: %s", strerror(errno));
-            close(event_fd);
-            event_fd = -1;
-            return EXIT_FAILURE;
-        }
-
-        ev.events = EPOLLIN;
-        ev.data.fd = event_fd;
-        if (epoll_ctl(epfd, EPOLL_CTL_ADD, event_fd, &ev) == -1) {
-            tlog(LOG_ERR, "epoll_ctl failed: %s", strerror(errno));
-            close(event_fd);
-            event_fd = -1;
-            close(epfd);
-            epfd = -1;
-            return EXIT_FAILURE;
-        }
-
         if (pthread_create(&event_thread_id, NULL, eventLoopThread, NULL) != 0) {
             tlog(LOG_ERR, "Failed to create event loop thread");
             close(event_fd);
             event_fd = -1;
-            close(epfd);
-            epfd = -1;
             return EXIT_FAILURE;
         }
         tlog(LOG_INFO, "Created render event thread");
@@ -568,17 +519,14 @@ int connectToRender() {
         char hello[] = MAGIC;
         if (write(event_fd, hello, sizeof(hello)) != sizeof(hello)) {
             tlog(LOG_ERR, "Failed to send handshake");
-            close(event_fd);
-            event_fd = -1;
-            close(epfd);
-            epfd = -1;
+            stopEventLoop();
             return EXIT_FAILURE;
         }
         tlog(LOG_INFO, "Sent handshake magic length=%zu", sizeof(hello));
 
         if (waitForInitialization() != 0) {
             tlog(LOG_ERR, "Resource initialization failed");
-            event_loop_running = 0;
+            stopEventLoop();
             return EXIT_FAILURE;
         }
 
@@ -591,6 +539,13 @@ int connectToRender() {
 void stopEventLoop(void) {
     if (!event_loop_running) {
         return;
+    }
+
+    int fd = event_fd;
+    if (fd != -1) {
+        lorieEvent e = {.type = EVENT_STOP_RENDER};
+        write(fd, &e, sizeof(e));
+        shutdown(fd, SHUT_RDWR);
     }
 
     event_loop_running = 0;
@@ -610,21 +565,12 @@ void stopEventLoop(void) {
         event_thread_id = 0;
     }
 
-    if (event_fd != -1) {
-        lorieEvent e = {.type = EVENT_STOP_RENDER};
-        write(event_fd, &e, sizeof(e));
-    }
-
     waylandDestroyBuffer();
     waylandDestroySharedServerState();
 
     if (event_fd != -1) {
         close(event_fd);
         event_fd = -1;
-    }
-    if (epfd != -1) {
-        close(epfd);
-        epfd = -1;
     }
     if (conn_fd!=-1){
         close(conn_fd);
