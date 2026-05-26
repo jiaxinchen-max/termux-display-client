@@ -211,36 +211,6 @@ androidHardwareBufferSendHandleToUnixSocket(AHardwareBuffer *buffer,
     return sendHandle(buffer, socketFd);
 }
 
-static void
-drainPendingSocketBytes(int socketFd)
-{
-    char buffer[64];
-    size_t total = 0;
-    unsigned char first = 0;
-
-    for (;;) {
-        ssize_t n = recv(socketFd, buffer, sizeof(buffer), MSG_DONTWAIT);
-        if (n > 0) {
-            if (total == 0)
-                first = (unsigned char) buffer[0];
-            total += (size_t) n;
-            continue;
-        }
-
-        if (n < 0 && errno == EINTR)
-            continue;
-
-        if (n < 0 && errno != EAGAIN && errno != EWOULDBLOCK)
-            tlog(LOG_ERR, "Failed to drain pending socket bytes: %s", strerror(errno));
-        break;
-    }
-
-    if (total > 0)
-        tlog(LOG_WARNING, "Drained %zu extra bytes after LorieBuffer receive, first=%u", total, first);
-    else
-        tlog(LOG_INFO, "No extra bytes after LorieBuffer receive");
-}
-
 __attribute__((unused))
 static int memfd_create(const char *name, unsigned int flags) {
 #ifndef __NR_memfd_create
@@ -664,7 +634,6 @@ void LorieBuffer_recvHandleFromUnixSocket(int socketFd, LorieBuffer** outBuffer)
     *ret = buffer;
     xorg_list_init(&ret->link);
     *outBuffer = ret;
-    drainPendingSocketBytes(socketFd);
     tlog(LOG_INFO, "LorieBuffer receive completed out=%p", ret);
 }
 
