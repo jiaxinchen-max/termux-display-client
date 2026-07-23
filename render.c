@@ -136,6 +136,8 @@ static bool isKnownEventType(uint8_t type) {
     case EVENT_SERVER_VERIFY_SUCCEED:
     case EVENT_CLIENT_VERIFY_SUCCEED:
     case EVENT_STOP_RENDER:
+    case EVENT_RENDERER_WAKEUP_COND:
+    case EVENT_GPU_COPY_DONE:
         return true;
     default:
         return false;
