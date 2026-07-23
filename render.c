@@ -23,6 +23,7 @@ static int connect_retry = 0;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t control_write_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+pthread_cond_t *rendererCond = NULL;
 static volatile int buffer_ready = 0;
 static volatile int event_loop_running = 0;
 static pthread_t event_thread_id = 0;
@@ -540,6 +541,20 @@ static void *eventLoopThread(void *arg) {
                         exit(0);
                     }
                     return NULL;
+                }
+                case EVENT_RENDERER_WAKEUP_COND: {
+                    int wakeupFd = ancil_recv_fd(event_fd);
+                    if (wakeupFd >= 0) {
+                        rendererCond = mmap(NULL, sizeof(pthread_cond_t), PROT_READ|PROT_WRITE, MAP_SHARED, wakeupFd, 0);
+                        close(wakeupFd);
+                        if (rendererCond == MAP_FAILED) {
+                            tlog(LOG_ERR, "Failed to map renderer cond var");
+                            rendererCond = NULL;
+                        } else
+                            tlog(LOG_INFO, "Mapped renderer wakeup cond var from fd=%d", wakeupFd);
+                    } else
+                        tlog(LOG_ERR, "EVENT_RENDERER_WAKEUP_COND did not contain a valid fd");
+                    break;
                 }
                 default:
                     if (handshake_phase != HANDSHAKE_COMPLETE) {
